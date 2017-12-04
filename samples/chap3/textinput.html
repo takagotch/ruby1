@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" 
+        content="text/html; charset=EUC-JP">
+  <title>Åê¹Æ</title>
+<style type="text/css"><!--
+  body, table, textarea { font-size:10pt; }
+  body { background-color:#fcc; }
+  th { text-align:right; color:#96f; }
+  .postform { 
+    background-color:#fff; 
+    border:solid 3px #f99;
+  }
+  .inp { 
+    color:#60f;
+    border:solid 1px #f99;
+  }
+  .btn { background-color:#fcc; border-color:#f99; }
+  -->
+</style>
+</head>
+<body>
+
+<form method="post" action="./textinput.cgi">
+<table class="postform" border="0" cellspacing="8">
+<tr><th>¤ªÌ¾Á°
+  <td><input name="user" class="inp" type="text" size="50">
+<tr><th>É½Âê
+  <td><input name="subject" class="inp" type="text" size="50">
+<tr><th>ËÜÊ¸<td>
+  <textarea name="body" class="inp" cols="50" rows="7"></textarea>
+<tr><th>URL
+  <td><input name="url" class="inp" type="text" size="50">
+<tr><th>Ê¸»ú¿§<td>
+  <input type="radio" name="col" value="0" checked>
+  <span style="color:#000">¢£</span>
+  <input type="radio" name="col" value="1">
+  <span style="color:#f03">¢£</span>
+  <input type="radio" name="col" value="2">
+  <span style="color:#f60">¢£</span>
+  <input type="radio" name="col" value="3">
+  <span style="color:#6f0">¢£</span>
+  <input type="radio" name="col" value="4">
+  <span style="color:#0cf">¢£</span>
+  <input type="radio" name="col" value="5">
+  <span style="color:#03f">¢£</span>
+  <input type="radio" name="col" value="6">
+  <span style="color:#c0f">¢£</span>
+<tr><th>ºï½ü¥­¡¼
+  <td><input name="delkey" class="inp" type="password">
+<tr><td colspan="2" align="center">
+  <input class="btn" type="submit" value="Åê¹Æ">
+  <input class="btn" type="reset" value="¥¯¥ê¥¢">
+</table>
+</form>
+
+</body>
+</html>

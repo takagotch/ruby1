@@ -1,0 +1,279 @@
+
+# Copyright (c) 2002 HORIKAWA Hisashi. All rights reserved.
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, and/or sell copies of the Software, and to permit persons
+# to whom the Software is furnished to do so, provided that the above
+# copyright notice(s) and this permission notice appear in all copies of
+# the Software and that both the above copyright notice(s) and this
+# permission notice appear in supporting documentation.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+# OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+# INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# Except as contained in this notice, the name of a copyright holder
+# shall not be used in advertising or otherwise to promote the sale, use
+# or other dealings in this Software without prior written authorization
+# of the copyright holder.
+
+require "nkf"
+require "cgisup.rb"
+require "board-conf.rb"
+
+def s2e(s)
+  s ? NKF.nkf("-m0 -S -e", s) : nil
+end
+
+def e2s(s)
+  s ? NKF.nkf("-m0 -s -E", s) : nil
+end
+
+def get_counter(fname)
+  File.open(fname, "r") {|count_f|
+    count_f.flock(File::LOCK_SH)  
+    return count_f.gets.to_i
+  }
+end
+
+# カウンタを加算する
+# @return （加算後の）新しい番号
+def incr_counter(fname)
+  File.open(fname, File::RDWR | File::CREAT) {|count_f|
+    count_f.flock(File::LOCK_EX)
+    cnt = count_f.gets.to_i + 1
+    count_f.rewind
+    count_f.truncate(0)
+    count_f.puts(cnt)
+  }
+  return cnt
+end
+
+class MessageStore
+  def initialize(dirname)
+    raise ArgumentError if !dirname
+    @dir = dirname
+    File.open(@dir + "/counter", "a") {} if !FileTest.exist?(@dir + "/counter")
+  end
+
+  def get(fname)
+    raise ArgumentError if fname =~ /[^0-9]/
+    mes = nil
+    File.open(@dir + "/" + fname) {|fp|
+      fp.flock(File::LOCK_SH)
+      mes = Mail.new(fp)
+    }
+    return mes
+  end
+
+  def write(fname, mes)
+    if !fname
+      fname = incr_counter(@dir + "/counter").to_s
+    else    
+      raise ArgumentError if fname =~ /[^0-9]/
+    end
+    File.open(@dir + "/" + fname, File::WRONLY | File::CREAT) {|fp|
+      fp.flock(File::LOCK_EX)
+      fp.truncate(0)
+      mes.header.each {|k, v|
+        fp.print "#{k}: #{v}\n"
+      }
+      fp.print "\n"
+      mes.body.each {|line|
+        fp.print line.gsub(/[\r\n]/, ''), "\n"
+      }
+    }
+  end
+
+  def exist?(fname)
+    raise ArgumentError if fname =~ /[^0-9]/
+    return FileTest.exist?(@dir + "/" + fname)
+  end
+  
+  def last
+    get_counter(@dir + "/counter")
+  end
+
+  def articles
+    a = Dir.glob(@dir + "/[0-9]*")
+    a.sort! {|x, y| x.to_i <=> y.to_i}
+    return a
+  end
+end
+
+## ユーザーID，パスワードが正しいか調べる
+# @param user ユーザーID
+# @param pwd パスワード
+# @return ユーザーIDとパスワードの組み合わせが正しければtrue
+def check_pwd(pwdfile, user, pwd)
+  return false if !user || !pwd
+  File.open(pwdfile, "r") {|fp|
+    fp.each_line {|line|
+      x = line.gsub(/[\r\n]/, '').split(':')
+      return true if user == x[0] && pwd == x[1]
+    }
+  }
+  return false
+end
+
+def get_name(pwdfile, user)
+  File.open(pwdfile, "r") {|fp|
+    fp.each_line {|line|
+      x = line.gsub(/[\r\n]/, '').split(':')
+      return x[2] if user == x[0]
+    }
+  }
+  return nil
+end
+
+# 新しい投稿を登録する
+def post_new_mes(cgi, user, store)
+  mes = Mail.new
+  mes.header['From'] = get_name(PWD_FILE, user)
+  mes.header['Date'] = CGI.rfc1123_date(Time.now)
+  mes.body = s2e(cgi['text'].first.strip).split(/\r?\n/)
+  store.write(nil, mes)
+end
+
+# 管理者削除
+def delete_mes(cgi)
+  if check_pwd(PWD_FILE, "admin", cgi["delpwd"].first)
+    cgi["delitem"].each {|x|
+      raise SecurityError if x =~ /[^0-9]/
+      x.untaint
+      File.rename(DATA_DIR + "/" + x, DELETED_DIR + "/" + x)
+    }
+  end
+end
+
+# @return [cgi, session]
+def get_session(view)
+  session_option = {"tmpdir" => SESSION_DIR, "holdtime" => HOLD_TIME}
+  CGI::Session.sweep(session_option)
+  cgi = CGI.new("html4")
+  if !CGI::Session.exist?(cgi, session_option)
+    user = cgi["user"].first
+    pwd = cgi["pwd"].first
+    if !check_pwd(PWD_FILE, user, pwd)
+      view.logon(user || pwd)
+      exit
+    end
+  end
+  session = CGI::Session.new(cgi, session_option)
+  session.update_access_time()
+  session["user"] = user if !session["user"]
+  return [cgi, session]
+end
+
+class BoardView
+  # メイン画面
+  def main_view(cgi, user, store)
+    profdb = ProfileByFile.new(user)
+    prof = profdb.get
+    last = store.last
+
+    # メッセージが1件もないとき
+    if last < 1
+      mes_out(cgi, user, nil, store)
+      exit
+    end
+
+    if !cgi['prev'].empty?
+      # [前]
+      cur = cgi['cur'].first.to_i
+      m = (cgi['m'].first || '1').to_i
+      pos = cur - m >= 1 ? cur - m : 1
+    elsif !cgi['next'].empty?
+      # [次]
+      cur = cgi['cur'].first.to_i
+      m = (cgi['m'].first || '1').to_i
+      pos = cur + m <= last ? cur + m : last
+    else
+      pos = (cgi['cur'].first || prof['last'] || '1').to_i
+    end
+
+    # 最後の表示位置を保存
+    prof['last'] = pos
+    profdb.write(prof)
+
+    mes_out(cgi, user, pos, store)
+  end
+end
+
+class ProfileByFile
+  def initialize(idstr)
+    raise ArgumentError if idstr =~ /[^0-9a-zA-Z]/
+    idstr.untaint
+    @path = PROFILE_DIR + "/" + idstr
+  end
+
+  def get
+    begin
+      fp = File.open(@path)
+    rescue Errno::ENOENT
+      return Hash.new
+    end
+    fp.flock(File::LOCK_SH)
+    prof = Hash.new
+    while line = fp.gets
+      k, v = line.chomp.split('=', 2)
+      prof[CGI.unescape(k)] = CGI.unescape(v) if k && v
+    end
+    fp.close
+    return prof
+  end
+
+  def write(prof)
+    File.open(@path, File::WRONLY | File::CREAT) {|fp|
+      fp.flock(File::LOCK_EX)
+      fp.truncate(0)
+      prof.each {|k, v|
+        fp.print "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}\n"
+      }
+    }
+  end
+end
+
+def error_out()
+  print "Content-Type: text/html\n\n"
+  print "<p>#{CGI.escapeHTML($!.inspect)}<br>\n"
+  $@.each {|x| print CGI.escapeHTML(x), "<br>\n"}
+end
+
+def main(view)
+  begin
+    store = MessageStore.new(DATA_DIR)
+    cgi, session = get_session(view)
+    user = session['user']
+    if !cgi["post"].empty?
+      # 新しい投稿の登録
+      post_new_mes(cgi, user, store)
+      view.main_view(cgi, user, store)
+    elsif !cgi["delete"].empty?
+      # 管理者削除
+      delete_mes(cgi)
+      view.main_view(cgi, user, store)
+    elsif !cgi["new"].empty?
+      # 新規投稿フォーム
+      view.new_mes_form(cgi)
+    elsif !cgi["bye"].empty?
+      # ログオフ
+      view.bye(cgi, session)
+    else
+      view.main_view(cgi, user, store)
+    end
+  rescue StandardError
+    error_out()
+  rescue ScriptError
+    error_out()
+  end
+end

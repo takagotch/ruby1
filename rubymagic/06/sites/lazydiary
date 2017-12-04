@@ -1,0 +1,5 @@
+# Lazy Diary
+SITENAME=Lazy Diary
+URL=http://www.namaraii.com/diary/
+BEGIN=<!-- PiloWeb_Begin -->
+END=<!-- PiloWeb_End -->

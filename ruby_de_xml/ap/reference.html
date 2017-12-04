@@ -1,0 +1,3803 @@
+<?xml version='1.0' encoding='SHIFT_JIS'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>REXML 2.4.2 ツリーAPIリファレンス</title>
+<link href='base.css' rel='StyleSheet' type='text/css'/>
+<script type='text/javascript' src='common.js'> </script>
+  </head>
+<body>
+<h1>
+      <a name='label:0' id='label:0'>REXML 2.4.2 ツリーAPIリファレンス</a>
+    </h1>
+        <!-- RDLabel: "REXML 2.4.2 ツリーAPIリファレンス" -->
+<p>付録としてREXML2.4.2のツリーAPIのリファレンスを収録する。このリファレ
+ンスはREXMLに付属してくるドキュメントとは別物で、余分な引数（開発途中
+で残ったと思われるメソッド中では使われていない引数）を省略したり引数名
+を一部変更しているもある。</p>
+<p>REXMLに付属してくるドキュメントの和訳のアーカイブは
+<a href='http://www.cneti.net/users/kou/downloads/'>&lt;URL:http://www.cneti.net/users/kou/downloads/&gt;</a> からダウンロードす
+ることができる。また、
+<a href='http://www.germane-software.com/software/rexml_doc_ja/current/index.html'>&lt;URL:http://www.germane-software.com/software/rexml_doc_ja/current/index.html&gt;</a>
+または
+<a href='http://www.cneti.net/users/kou/ruby/rexml/doc/index.html'>&lt;URL:http://www.cneti.net/users/kou/ruby/rexml/doc/index.html&gt;</a>でオ
+ンラインで閲覧することも出来る。</p>
+<h2>
+      <a name='label:1' id='label:1'>はじめに</a>
+    </h2>
+        <!-- RDLabel: "はじめに" -->
+<p>まずはツリーAPIでのクラス、モジュールの構成を（Fig: ツリーAPIの構成）に示す。</p>
+<pre>Fig: ツリーAPIの構成
+
++-----------------+   +-----------------+   +--------------------------+
+|  REXML::Child   |   |  REXML::Parent  |   |  REXML::Element          |  +-----------------+
+|  _____________  |-+-|  _____________  |-+-|  ______________________  |--| REXML::Document |
+| / REXML::Node \ | | | / Enumerable  \ | | | / REXML::Namespace     \ |  +-----------------+
+| \_____________/ | | | \_____________/ | | | |  __________________  | |
++-----------------+ | +-----------------+ | | | / REXML::XMLTokens \ | |
+                    |                     | | | \__________________/ | |
+                    |                     | | \______________________/ |
+                    |                     | +--------------------------+
+                    |                     | +----------------------+
+                    |                     | |  REXML::DocType      |
+                    |                     +-|  __________________  |
+                    |                       | / REXML::XMLTokens \ |
+                    |                       | \__________________/ |
+                    |                       +----------------------+
+                    |
+                    | +--------------------+
+                    +-| REXML::Instruction |
+                    | +--------------------+
+                    | +-----------------+
+                    | |  REXML::Comment |
+                    +-|  _____________  |
+                    | | / Comparable  \ |
+                    | | \_____________/ |
+                    | +-----------------+
+                    | +-----------------+
+                    | |  REXML::Text    | +--------------+
+                    +-|  _____________  |-| REXML::CData |
+                    | | / Comparable  \ | +--------------+
+                    | | \_____________/ |
+                    | +-----------------+
+                    | +--------------------+
+                    +-| REXML::XMLDecl     |
+                    | +--------------------+
+                    | +--------------------+ +--------------------+
+                    +-| REXML::Declaration |-| REXML::ElementDecl |
+                    | +--------------------+ +--------------------+
+                    | +---------------------+
+                    +-| REXML::NotationDecl |
+                    | +---------------------+
+                    | +----------------------+
+                    | |  REXML::AttlistDecl  |
+                    +-|  __________________  |
+                    | | / REXML::XMLTokens \ |
+                    | | \__________________/ |
+                    | |  _________________   |
+                    | | / Enumerable      \  |
+                    | | \_________________/  |
+                    | +----------------------+
+                    | +----------------------+
+                    | |  REXML::Entity       |
+                    +-|  __________________  |
+                      | / REXML::XMLTokens \ |
+                      | \__________________/ |
+                      +----------------------+
+  _____________________
+ / REXML::EntityConst  \
+ \_____________________/
++----------------------+
+|  REXML::Elements     |
+|  __________________  |
+| / Enumerable       \ |
+| \__________________/ |
++----------------------+
++---------------------------------------------+
+|  REXML::Attribute                           |
+|                    ______________________   |
+|                   / REXML::Namespace     \  |
+|   _____________   |  __________________  |  |
+|  / REXML::Node \  | / REXML::XMLTokens \ |  |
+|  \_____________/  | \__________________/ |  |
+|                   \______________________/  |
++---------------------------------------------+
++------+ +-------------------+
+| Hash |-| REXML::Attributes |
++------+ +-------------------+
+
++---------+   ____________
+| クラス  |  / モジュール \
++---------+  \____________/</pre>
+<p>（Fig: ツリーAPIの構成)の丸四角で囲まれたものがモジュールを表していて、
+四角で囲まれたものがクラスを表している。クラスまたはモジュール中にモ
+ジュールが書かれているものはincludeされていることを表す。また、
+線で結ばれているクラスは左にあるクラスが右にあるクラスのスーパークラス
+となる。</p>
+<p>例えば、以下のような構成は（Fig: includeされたモジュール）の様に表す。</p>
+<pre>module A
+end
+
+class B
+  include A
+end
+
+module C
+  include A
+end
+
+Fig: includeされたモジュール
+
++-------+    _______
+|   B   |   /   C   \
+| _____ |   | _____ |
+|/  A  \|   |/  A  \|
+|\_____/|   |\_____/|
++-------+   \_______/</pre>
+<p>また、以下のような構成は（Fig: スーパークラス）の様に表す。</p>
+<pre>class A
+end
+
+class B &lt; A
+end
+
+Fig: スーパークラス
+
++---+ +---+
+| A |-| B |
++---+ +---+</pre>
+<h2>
+      <a name='label:2' id='label:2'>REXML::Nodeモジュール</a>
+    </h2>
+        <!-- RDLabel: "REXML::Nodeモジュール" -->
+<p>
+      <a href='#label:2'>REXML::Nodeモジュール</a>は<a href='#label:209'>REXML::Elementsクラス</a>、
+<a href='#label:238'>REXML::Attributesクラス</a>以外のクラスでincludeされてお
+り、ツリーAPIのもっとも基本的な処理を定義している。</p>
+<p>
+      <a href='#label:209'>REXML::Elementsクラス</a>、<a href='#label:238'>REXML::Attributesクラス</a>
+で<a href='#label:2'>REXML::Nodeモジュール</a>がincludeされていないのはこれ
+らのクラスがノードではなくノードセットを表現しているからだ。</p>
+<p>各メソッドの例には<a href='#label:2'>REXML::Nodeモジュール</a>をincludeして
+いる<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトを用いる。また、以下
+の記述は省略する。</p>
+<pre>source = "&lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;"
+doc = REXML::Document.new(source)</pre>
+<dl>
+<dt>
+        <a name='label:3' id='label:3'>
+          <code>REXML::Node#indent(<var>to</var>, <var>ind</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Node#indent" -->
+<dd>
+<p>
+          <var>to</var>の末尾に&lt;&lt;メソッドで<var>ind</var>で指定した分だけ空白を
+追加する。もし、<var>ind</var>が1より小さい場合は何もしない。</p>
+      </dd>
+</dl>
+<pre>tmp = "tmp"
+doc.root.indent(tmp, 3)
+p tmp
+# "tmp   "
+tmp = "tmp"
+doc.root.indent(tmp, 0)
+p tmp
+# "tmp"</pre>
+<dl>
+<dt>
+        <a name='label:4' id='label:4'>
+          <code>REXML::Node#next_sibling_node</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Node#next_sibling_node" -->
+<dd>
+<p>弟ノード（文書順で自分の次に現れる同じ親ノードを持つノード）を返す。
+もし、親ノードが設定されていなかったり、弟ノードが無かったら
+nilを返す。</p>
+      </dd>
+</dl>
+<pre>b = doc.elements["/root/b"]
+puts b.next_sibling_node
+# &lt;c/&gt;
+puts b.next_sibling_node.next_sibling_node
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:5' id='label:5'>
+          <code>REXML::Node#previous_sibling_node</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Node#previous_sibling_node" -->
+<dd>
+<p>兄ノード（逆文書順で自分の次に現れる同じ親ノードを持つノード）を返
+す。もし、親ノードが設定されていなかったり、兄ノードが無かったら
+nilを返す。</p>
+      </dd>
+</dl>
+<pre>b = doc.root.elements["b"]
+puts b.previous_sibling_node
+# &lt;a/&gt;
+puts b.previous_sibling_node.previous_sibling_node
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:6' id='label:6'>
+          <code>REXML::Node#to_s(<var>indent</var>=-<var>1</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Node#to_s" -->
+<dd>
+<p>writeメソッドの第二引数に<var>indent</var>を指定したときに書き出
+される文字列を返す。<a href='#label:2'>REXML::Nodeモジュール</a>では
+writeメソッドを定義しておらずincludeしているクラスで
+writeメソッドを定義している。</p>
+      </dd>
+</dl>
+<pre>doc.root.write($stdout)
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt; ## putsで出力していないので改行はつかない
+puts doc.root.to_s
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<h2>
+      <a name='label:7' id='label:7'>REXML::XMLTokensモジュール</a>
+    </h2>
+        <!-- RDLabel: "REXML::XMLTokensモジュール" -->
+<p>
+      <a href='#label:7'>REXML::XMLTokensモジュール</a>にはXML文書をパースするときに使
+う定数が定義されている。</p>
+<h2>
+      <a name='label:8' id='label:8'>REXML::Namespaceモジュール</a>
+    </h2>
+        <!-- RDLabel: "REXML::Namespaceモジュール" -->
+<p>
+      <a href='#label:8'>REXML::Namespaceモジュール</a>は
+<a href='#label:7'>REXML::XMLTokensモジュール</a>をincludeしている。
+<a href='#label:8'>REXML::Namespaceモジュール</a>は
+ネームスペース関連に共通する処理を定義している。</p>
+<p>各メソッドの例には<a href='#label:8'>REXML::Namespaceモジュール</a>を
+includeしている<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトを
+用いる。また、以下の記述は省略する。</p>
+<pre>source = "&lt;fuga:a xmlns:fuga='http://fuga/' xmlns:hoge='http://hoge'/&gt;"
+doc = REXML::Document.new(source)</pre>
+<dl>
+<dt>
+        <a name='label:9' id='label:9'>
+          <code>REXML::Namespace#expanded_name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#expanded_name" -->
+<dd>
+<p>接頭辞付きの名前を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.expanded_name
+# fuga:a</pre>
+<dl>
+<dt>
+        <a name='label:10' id='label:10'>
+          <code>REXML::Namespace#fully_expanded_name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#fully_expanded_name" -->
+<dd>
+<p>
+          <a href='#label:15'>REXML::Namespace#prefix</a>メソッドで返される値と
+<a href='#label:13'>REXML::Namespace#name</a>メソッドで返される値を":"で連結し
+た文字列を返す。必ずしも<a href='#label:9'>REXML::Namespace#expanded_name</a>
+と等しい文字列を返すわけではない。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.expanded_name
+# fuga:a
+puts doc.root.fully_expanded_name
+# fuga:a
+doc.root.prefix = "hoge"
+puts doc.root.expanded_name
+# fuga:a
+puts doc.root.fully_expanded_name
+# hoge:a</pre>
+<dl>
+<dt>
+        <a name='label:11' id='label:11'>
+          <code>REXML::Namespace#has_name?(<var>name</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#has_name?" -->
+<dd>
+<p>もし、<var>name</var>が接頭辞付きの名前なら接頭辞付きで比較し、
+<var>name</var>が接頭辞のない名前なら接頭辞抜きの名前と比較する。常に接
+頭辞付きで比較するわけではない。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.has_name?("fuga:a")
+# true
+puts doc.root.has_name?("hoge:a")
+# false
+puts doc.root.has_name?("a")
+# true</pre>
+<dl>
+<dt>
+        <a name='label:12' id='label:12'>
+          <code>REXML::Namespace#local_name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#local_name" -->
+<dd>
+<p>
+          <a href='#label:13'>REXML::Namespace#name</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:13' id='label:13'>
+          <code>REXML::Namespace#name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#name" -->
+<dd>
+<p>接頭辞抜きの名前を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.name
+# a</pre>
+<dl>
+<dt>
+        <a name='label:14' id='label:14'>
+          <code>REXML::Namespace#name=(<var>name</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#name=" -->
+<dd>
+<p>名前を設定する。</p>
+      </dd>
+</dl>
+<pre>doc.root.name = "hoge:b"
+puts doc.root.name
+# b
+puts doc.root.expanded_name
+# hoge:b
+puts doc.root.prefix
+# hoge</pre>
+<dl>
+<dt>
+        <a name='label:15' id='label:15'>
+          <code>REXML::Namespace#prefix</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#prefix" -->
+<dd>
+<p>接頭辞を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.prefix
+# fuga</pre>
+<dl>
+<dt>
+        <a name='label:16' id='label:16'>
+          <code>REXML::Namespace#prefix=(<var>prefix</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Namespace#prefix=" -->
+<dd>
+<p>接頭辞を設定する。</p>
+      </dd>
+</dl>
+<pre>doc.root.prefix = "hoge"
+puts doc.root.name
+# hoge
+puts doc.root.expanded_name
+# fuga:a
+puts doc.root.prefix
+# hoge</pre>
+<h2>
+      <a name='label:17' id='label:17'>REXML::Childクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Childクラス" -->
+<p>
+      <a href='#label:17'>REXML::Childクラス</a>は<a href='#label:209'>REXML::Elementsクラス</a>、
+<a href='#label:238'>REXML::Attributesクラス</a>、
+<a href='#label:223'>REXML::Attributeクラス</a>以外のクラスの祖先クラスになっており、
+子ノードに共通する処理を定義している。</p>
+<p>多くの場合、このクラスを直接使わず、このクラスを継承したクラスを使うこ
+とになる。</p>
+<p>各メソッドの例には<a href='#label:17'>REXML::Childクラス</a>の（直接または間接的な）
+サブクラスである<a href='#label:132'>REXML::Textクラス</a>、
+<a href='#label:53'>REXML::Elementクラス</a>
+のオブジェクトを用いる。また、以下の記述は省略する。</p>
+<pre>source = "&lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;"
+doc = REXML::Document.new(source)</pre>
+<dl>
+<dt>
+        <a name='label:18' id='label:18'>
+          <code>REXML::Child.new(<var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child.new" -->
+<dd>
+<p>
+          <var>parent</var>を親ノードに設定する。</p>
+      </dd>
+</dl>
+<pre>child = REXML::Child.new(doc.root)
+puts child.parent.name
+# root
+child.parent = doc.root.elements["b"]
+puts child.parent.name
+# b</pre>
+<dl>
+<dt>
+        <a name='label:19' id='label:19'>
+          <code>REXML::Child.once(*<var>ids</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child.once" -->
+<dd>
+<p>
+          <var>ids</var>で指定された各シンボルと同じ名前を持つメソッドを一度しか
+評価しなくする。つまり、一回
+目の呼出し時に戻り値をキャッシュしておき、二回目以降の呼出しでは
+キャッシュされた値を返すようにする。</p>
+      </dd>
+<dt>
+        <a name='label:20' id='label:20'>
+          <code>REXML::Child#bytes</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#bytes" -->
+<dd>
+<p>to_sメソッドの結果を返す。特に理由が無ければto_sメソッ
+ドを使った方がよい。</p>
+      </dd>
+<dt>
+        <a name='label:21' id='label:21'>
+          <code>REXML::Child#document</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#document" -->
+<dd>
+<p>もし存在すれば自分自身が属する<a href='#label:97'>REXML::Documentクラス</a>の
+オブジェクトを返す。存在しない場合はnilを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["b"].document
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;
+puts REXML::Text.new("abc").document
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:22' id='label:22'>
+          <code>REXML::Child#next_sibling</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#next_sibling" -->
+<dd>
+<p>
+          <a href='#label:4'>REXML::Node#next_sibling_node</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:23' id='label:23'>
+          <code>REXML::Child#next_sibling=(<var>other</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#next_sibling=" -->
+<dd>
+<p>
+          <var>other</var>を弟ノードとする。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["b"].next_sibling = REXML::Text.new("abc")
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;abc&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:24' id='label:24'>
+          <code>REXML::Child#parent</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#parent" -->
+<dd>
+<p>親ノードを返す。</p>
+<p>例は<a href='#label:18'>REXML::Child.new</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:25' id='label:25'>
+          <code>REXML::Child#parent=(<var>other</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#parent=" -->
+<dd>
+<p>親ノードを設定する。</p>
+<p>例は<a href='#label:18'>REXML::Child.new</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:26' id='label:26'>
+          <code>REXML::Child#previous_sibling</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#previous_sibling" -->
+<dd>
+<p>
+          <a href='#label:5'>REXML::Node#previous_sibling_node</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:27' id='label:27'>
+          <code>REXML::Child#previous_sibling=(<var>other</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#previous_sibling=" -->
+<dd>
+<p>
+          <var>other</var>を兄ノードとする。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["b"].previous_sibling = REXML::Text.new("abc")
+# &lt;root&gt;&lt;a/&gt;abc&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:28' id='label:28'>
+          <code>REXML::Child#remove</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#remove" -->
+<dd>
+<p>自分自身を親ノードから取り除き、自分自身を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["b"].remove
+# &lt;b/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:29' id='label:29'>
+          <code>REXML::Child#replace_with(<var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Child#replace_with" -->
+<dd>
+<p>自分自身を<var>child</var>で置き換え、自分自身を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["b"].replace_with(REXML::Text.new("abc"))
+# &lt;b/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;abc&lt;c/&gt;&lt;/root&gt;</pre>
+<h2>
+      <a name='label:30' id='label:30'>REXML::Parentクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Parentクラス" -->
+<p>
+      <a href='#label:30'>REXML::Parentクラス</a>は<a href='#label:17'>REXML::Childクラス</a>のサブ
+クラスで、Enumerableモジュールをincludeしている。
+<a href='#label:30'>REXML::Parentクラス</a>は子ノードを持つことが出来るノード（つ
+まり親ノード）に共通の処理を提供する。</p>
+<p>
+      <a href='#label:30'>REXML::Parentクラス</a>も<a href='#label:17'>REXML::Childクラス</a>と同様、
+多くの場合このクラスを直接使わず、このクラスを継承したクラスを使うこと
+になる。</p>
+<p>各メソッドの例には<a href='#label:30'>REXML::Parentクラス</a>のサブクラスである
+<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトを用いる。また、以下の記
+述は省略する。</p>
+<pre>source = "&lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;"
+doc = REXML::Document.new(source)</pre>
+<dl>
+<dt>
+        <a name='label:31' id='label:31'>
+          <code>REXML::Parent.new(<var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent.new" -->
+<dd>
+<p>
+          <var>parent</var>を親ノードに設定する。</p>
+      </dd>
+</dl>
+<pre>parent = REXML::Parent.new(doc.root)
+puts parent.parent.name
+# root</pre>
+<dl>
+<dt>
+        <a name='label:32' id='label:32'>
+          <code>REXML::Parent#&lt;&lt;(<var>object</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#<<" -->
+<dd>
+<p>
+          <a href='#label:35'>REXML::Parent#add</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:33' id='label:33'>
+          <code>REXML::Parent#[<var>index</var>]</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#[]" -->
+<dd>
+<p>
+          <var>index</var>番目の子ノードを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root[1]
+# &lt;b/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:34' id='label:34'>
+          <code>REXML::Parent#[*<var>args</var>] = <var>val</var>
+          </code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#[]=" -->
+<dd>
+<p>Array#[]=と同じ様に子ノードを代入する。戻り値は代入された子
+ノード。</p>
+      </dd>
+</dl>
+<pre>puts doc.root[1] = REXML::Element.new("d")
+# &lt;d/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;&lt;d/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:35' id='label:35'>
+          <code>REXML::Parent#add(<var>object</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#add" -->
+<dd>
+<p>
+          <var>object</var>を最後の子ノードとして追加する。戻り値は<var>object</var>。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.add(REXML::Element.new("d"))
+# &lt;d/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;d/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:36' id='label:36'>
+          <code>REXML::Parent#deep_clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#deep_clone" -->
+<dd>
+<p>子ノードを含めたコピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.deep_clone
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:37' id='label:37'>
+          <code>REXML::Parent#delete(<var>object</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#delete" -->
+<dd>
+<p>もし、<var>object</var>が子ノードなら削除する。子ノードでなければ何もし
+ない。戻り値はnil。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.delete(doc.root.elements["b"])
+# nil
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;&lt;c/&gt;&lt;/root&gt;
+puts doc.root.delete("abc")
+# nil
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:38' id='label:38'>
+          <code>REXML::Parent#delete_at(<var>index</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#delete_at" -->
+<dd>
+<p>
+          <var>index</var>番目の子ノードを削除する。何番目というのは1ではなく0か
+ら数え始める。つまり、最初の子ノードは0番目となる。戻り値は削除さ
+れたノード。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.delete_at(0)
+# &lt;a/&gt;
+puts doc.root
+# &lt;root&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:39' id='label:39'>
+          <code>REXML::Parent#delete_if(&amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#delete_if" -->
+<dd>
+<p>ブロックが真を返す子ノードを削除する。戻り値は削除されなかった子ノー
+ドの配列。</p>
+      </dd>
+</dl>
+<pre>p (doc.root.delete_if do |node|
+     node.name == "b"
+   end.collect {|node| node.to_s})
+# ["&lt;a/&gt;", "&lt;c/&gt;"]
+puts doc.root
+# &lt;root&gt;&lt;a/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:40' id='label:40'>
+          <code>REXML::Parent#each(&amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#each" -->
+<dd>
+<p>各子ノード毎に、子ノードを引数にしてブロックを呼び出す。</p>
+      </dd>
+</dl>
+<pre>tmp = []
+doc.root.each {|node| tmp &lt;&lt; node.to_s}
+p tmp
+# ["&lt;a/&gt;", "&lt;b/&gt;", "&lt;c/&gt;"]</pre>
+<dl>
+<dt>
+        <a name='label:41' id='label:41'>
+          <code>REXML::Parent#each_child(&amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#each_child" -->
+<dd>
+<p>
+          <a href='#label:40'>REXML::Parent#each</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:42' id='label:42'>
+          <code>REXML::Parent#each_index(&amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#each_index" -->
+<dd>
+<p>各子ノード毎に、子ノードのインデックスを引数にしてブロックを呼
+び出す。</p>
+      </dd>
+</dl>
+<pre>tmp = []
+doc.root.each_index {|i| tmp &lt;&lt; doc.root[i].to_s}
+p tmp
+# ["&lt;a/&gt;", "&lt;b/&gt;", "&lt;c/&gt;"]</pre>
+<dl>
+<dt>
+        <a name='label:43' id='label:43'>
+          <code>REXML::Parent#index(<var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#index" -->
+<dd>
+<p>
+          <var>child</var>が何番目の子ノードなのかを返す。もし、<var>child</var>が子ノー
+ドではない場合は<a href='#label:50'>REXML::Parent#size</a>メソッドの戻り値-1を
+返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.index(doc.root[1])
+# 1
+puts doc.root.index("abc")
+# 2</pre>
+<dl>
+<dt>
+        <a name='label:44' id='label:44'>
+          <code>REXML::Parent#insert_after(<var>xpath</var>, <var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#insert_after" -->
+<dt>
+        <a name='label:45' id='label:45'>
+          <code>REXML::Parent#insert_after(<var>child1</var>, <var>child2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#insert_after" -->
+<dd>
+<p>
+          <a href='#label:46'>REXML::Parent#insert_before</a>メソッドとの違いは第二引数
+を弟要素として設定することだけだ。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.insert_after("b", REXML::Element.new("d"))
+# &lt;root&gt;&lt;a/&gt;&lt;b/&gt;&lt;d/&gt;&lt;c/&gt;&lt;/root&gt;
+puts doc.root.insert_after(doc.root.elements["a"],
+                            REXML::Element.new("e"))
+# &lt;root&gt;&lt;a/&gt;&lt;e/&gt;&lt;d/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;
+puts doc.root.insert_after(doc.root, REXML::Element.new("f"))
+# &lt;root&gt;&lt;a/&gt;&lt;e/&gt;&lt;d/&gt;&lt;b/&gt;&lt;c/&gt;&lt;f/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:46' id='label:46'>
+          <code>REXML::Parent#insert_before(<var>xpath</var>, <var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#insert_before" -->
+<dt>
+        <a name='label:47' id='label:47'>
+          <code>REXML::Parent#insert_before(<var>child1</var>, <var>child2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#insert_before" -->
+<dd>
+<p>もし、第一引数がStringオブジェクトだったら一番目の形式になる。
+この形式では<var>xpath</var>にマッチするノードの兄ノードに<var>child</var>
+を設定する。もし、<var>xpath</var>にマッチするノードがなかったり、マッ
+チしたノードがどの親ノードにも属していない場合は例外が発生する。</p>
+<p>第一引数がStringオブジェクトでなかったら二番目の形式になる。
+この形式では<var>child2</var>を<var>child1</var>の兄ノードとして設定する。も
+し、<var>child1</var>が子ノードではなかったら<var>child2</var>を最後の子ノー
+ドの兄ノードとして追加する。</p>
+<p>戻り値は自分自身。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.insert_before("b", REXML::Element.new("d"))
+# &lt;root&gt;&lt;a/&gt;&lt;d/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;
+puts doc.root.insert_before(doc.root.elements["a"],
+                            REXML::Element.new("e"))
+# &lt;root&gt;&lt;e/&gt;&lt;a/&gt;&lt;d/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;
+puts doc.root.insert_before(doc.root, REXML::Element.new("f"))
+# &lt;root&gt;&lt;e/&gt;&lt;a/&gt;&lt;d/&gt;&lt;b/&gt;&lt;f/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:48' id='label:48'>
+          <code>REXML::Parent#push(<var>object</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#push" -->
+<dd>
+<p>
+          <a href='#label:35'>REXML::Parent#add</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:49' id='label:49'>
+          <code>REXML::Parent#replace_child(<var>to_replace</var>, <var>replacement</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#replace_child" -->
+<dd>
+<p>
+          <var>to_replace</var>を<var>replacement</var>で置き換える。もし、
+<var>to_replace</var>が子ノードではない場合は例外が発生する。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.replace_child(doc.root.elements["b"], REXML::Element.new("d"))
+# &lt;root&gt;&lt;a/&gt;&lt;d/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:50' id='label:50'>
+          <code>REXML::Parent#size</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#size" -->
+<dd>
+<p>子ノードの数を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.size
+# 3</pre>
+<dl>
+<dt>
+        <a name='label:51' id='label:51'>
+          <code>REXML::Parent#to_a</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#to_a" -->
+<dd>
+<p>子ノードの配列のコピーを返す。</p>
+      </dd>
+</dl>
+<pre>p doc.root.to_a.collect {|node| node.to_s }
+# ["&lt;a/&gt;", "&lt;b/&gt;", "&lt;c/&gt;"]</pre>
+<dl>
+<dt>
+        <a name='label:52' id='label:52'>
+          <code>REXML::Parent#unshift(<var>object</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Parent#unshift" -->
+<dd>
+<p>
+          <var>object</var>を最初の子ノードとして追加する。戻り値は子ノードの配列。</p>
+      </dd>
+</dl>
+<pre>p doc.root.unshift(REXML::Element.new("d")).collect{|node| node.to_s}
+# ["&lt;d/&gt;", "&lt;a/&gt;", "&lt;b/&gt;", "&lt;c/&gt;"]
+puts doc.root
+# &lt;root&gt;&lt;d/&gt;&lt;a/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<h2>
+      <a name='label:53' id='label:53'>REXML::Elementクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Elementクラス" -->
+<p>
+      <a href='#label:53'>REXML::Elementクラス</a>は<a href='#label:30'>REXML::Parentクラス</a>のサ
+ブクラスであり、<a href='#label:8'>REXML::Namespaceモジュール</a>をinclude
+している。このクラスは要素ノードを表現している。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>source = &lt;&lt;-XML
+&lt;root&gt;
+ text1&lt;![CDATA[cdata1]]&gt;
+ &lt;a number='1'&gt;a's text&lt;/a&gt;
+ &lt;!--comment1--&gt;
+ &lt;b number='2'/&gt;
+ text2&lt;?pi1 content?&gt;
+ &lt;c num='2'&gt;c's text&lt;/c&gt;
+ &lt;![CDATA[cdata2]]&gt;&lt;!--comment2--&gt;
+ &lt;?pi2 content?&gt;
+&lt;/root&gt;
+XML
+doc = REXML::Document.new(source)</pre>
+<dl>
+<dt>
+        <a name='label:54' id='label:54'>
+          <code>REXML::Element.new(<var>source</var>, <var>parent</var>=<var>nil</var>, <var>context</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element.new" -->
+<dt>
+        <a name='label:55' id='label:55'>
+          <code>REXML::Element.new(<var>name</var>=<var>UNDEFINED</var>, <var>parent</var>=<var>nil</var>, <var>context</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element.new" -->
+<dt>
+        <a name='label:56' id='label:56'>
+          <code>REXML::Element.new(<var>element</var>, <var>parent</var>=<var>nil</var>, <var>context</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element.new" -->
+<dd>
+<p>第一引数がREXML::Sourceオブジェクトのときは一番目の形式にな
+る。この形式では<var>source</var>をパースして要素名、属性、子ノードを設
+定する。</p>
+<p>第一引数がStringオブジェクトの場合は二番目の形式にな
+る。この形式では要素名を<var>name</var>に設定する。現在、定数
+REXML::Element::UNDEFINEDの値は"UNDEFINED"となっている。</p>
+<p>第一引数が<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトの場合は
+<var>element</var>の
+コピーを作る。属性はコピーされるが子ノードはコピーされない。</p>
+<p>
+          <var>parent</var>は親ノードになる。</p>
+<p>
+          <var>content</var>はテキストノードの扱い方を指定する。</p>
+      </dd>
+</dl>
+<pre>src = REXML::SourceFactory.create_from("&lt;a attr='val'&gt;text&lt;b/&gt;&lt;/a&gt;")
+puts (e = REXML::Element.new(src))
+# &lt;a attr='val'&gt;text&lt;b/&gt;&lt;/a&gt;
+puts REXML::Element.new("child", e)
+# &lt;child/&gt;
+puts e
+# &lt;a attr='val'&gt;text&lt;b/&gt;&lt;child/&gt;&lt;/a&gt;
+puts REXML::Element.new(e)
+# &lt;a attr='val'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:57' id='label:57'>
+          <code>REXML::Element#add_attribute(<var>attribute</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_attribute" -->
+<dt>
+        <a name='label:58' id='label:58'>
+          <code>REXML::Element#add_attribute(<var>name</var>, <var>value</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_attribute" -->
+<dd>
+<p>第一引数が<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトなら一番
+目の形式になる。
+この形式では<var>attribute</var>で指定された属性を追加する。もし、同じ
+名前の属性が存在すれば上書きされる。</p>
+<p>それ以外の場合は二番目の形式になる。<var>name</var>で指定された属性名、
+<var>value</var>で指定された属性値をもつ属性を追加する。もし、同じ名前
+の属性があった場合は上書きされる。もし、<var>value</var>にnilを指
+定した場合は<var>name</var>で指定された属性名を持つ属性は削除される
+（REXMLのバグで削除されない場合もある）。</p>
+<p>例は<a href='#label:81'>REXML::Element#has_attributes?</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:59' id='label:59'>
+          <code>REXML::Element#add_attributes(<var>hash_or_array</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_attributes" -->
+<dd>
+<p>HashまたはArrayオブジェクトで追加する属性を指定する。
+形式は{属性名1 =&gt; 属性値1, 属性名2 =&gt; 属性値2, ...}または、
+[[属性名1, 属性値1], [属性名2, 属性値2], ...]となる。</p>
+<p>例は<a href='#label:81'>REXML::Element#has_attributes?</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:60' id='label:60'>
+          <code>REXML::Element#add_element(<var>element</var>=<var>nil</var>, <var>attrs</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_element" -->
+<dd>
+<p>
+          <var>element</var>を最後の子ノードとして追加する。もし、<var>attrs</var>に
+{属性名 =&gt; 属性値}というハッシュを指定していたら
+<var>element</var>には<var>attrs</var>で指定した属性が追加される。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("a")
+puts e.has_elements?
+# false
+puts e.add_element("b", {"attr" =&gt; "val"})
+# &lt;b attr='val'/&gt;
+puts e
+# &lt;a&gt;&lt;b attr='val'/&gt;&lt;/a&gt;
+puts e.has_elements?
+# true
+puts e.delete_element("b")
+# &lt;b attr='val'/&gt;
+puts e.has_elements?
+# false
+puts e
+# &lt;a/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:61' id='label:61'>
+          <code>REXML::Element#add_namespace(<var>prefix</var>, <var>uri</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_namespace" -->
+<dt>
+        <a name='label:62' id='label:62'>
+          <code>REXML::Element#add_namespace(<var>uri</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_namespace" -->
+<dd>
+<p>一番目の形式では接頭辞が<var>prefix</var>、ネームスペース名が<var>uri</var>
+のネームスペース宣言を追加する。</p>
+<p>二番目の形式ではネームスペース名が<var>uri</var>のデフォルトネームスペー
+ス宣言を追加する。</p>
+<p>戻り値は自分自身。</p>
+<p>例は<a href='#label:88'>REXML::Element#prefixes</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:63' id='label:63'>
+          <code>REXML::Element#add_text(<var>text</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#add_text" -->
+<dd>
+<p>
+          <var>text</var>を最後の子ノードとして追加する。<var>text</var>に
+Stringオブジェクトを指定すると<a href='#label:132'>REXML::Textクラス</a>
+のオブジェクトに変換される。</p>
+<p>戻り値は自分自身。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["a"].add_text("hoge")
+# &lt;a number='1'&gt;a's texthoge&lt;/a&gt;
+puts doc.root.elements["b"].add_text("fuga")
+# &lt;b number='2'&gt;fuga&lt;/b&gt;
+puts doc.root.elements["c"].add_text(nil)
+# &lt;c num='2'&gt;c's text&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:64' id='label:64'>
+          <code>REXML::Element#attributes</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#attributes" -->
+<dd>
+<p>属性を管理している<a href='#label:238'>REXML::Attributesクラス</a>のオブジェクトを返す。</p>
+      </dd>
+<dt>
+        <a name='label:65' id='label:65'>
+          <code>REXML::Element#cdatas</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#cdatas" -->
+<dd>
+<p>子CDATAセクション（<a href='#label:146'>REXML::CDataクラス</a>のオブジェクト）
+の配列を返す。
+この配列は凍結されている。</p>
+      </dd>
+</dl>
+<pre>p doc.root.cdatas.collect {|cdata| cdata.to_s }
+# ["cdata1", "cdata2"]
+puts doc.root.cdatas.frozen?
+# true</pre>
+<dl>
+<dt>
+        <a name='label:66' id='label:66'>
+          <code>REXML::Element#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#clone" -->
+<dd>
+<p>コピーを返す。属性はコピーされるが子ノードはコピーされない。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.clone
+# &lt;root/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:67' id='label:67'>
+          <code>REXML::Element#comments</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#comments" -->
+<dd>
+<p>子コメントノード（<a href='#label:123'>REXML::Commentクラス</a>のオブジェクト）
+の配列を返す。
+この配列は凍結されている。</p>
+      </dd>
+</dl>
+<pre>p doc.root.comments.collect {|comment| comment.to_s }
+# ["comment1", "comment2"]
+puts doc.root.comments.frozen?
+# true</pre>
+<dl>
+<dt>
+        <a name='label:68' id='label:68'>
+          <code>REXML::Element#context</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#context" -->
+<dd>
+<p>テキストノードの扱い方を取得する。</p>
+      </dd>
+</dl>
+<pre>p doc.root.context
+# {}
+doc.root.context = {:compress_whitespace =&gt; :all}
+p doc.root.context
+# {:compress_whitespace=&gt;:all}</pre>
+<dl>
+<dt>
+        <a name='label:69' id='label:69'>
+          <code>REXML::Element#context=(<var>context</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#context=" -->
+<dd>
+<p>テキストノードの扱い方を設定する。</p>
+<p>例は<a href='#label:68'>REXML::Element#context</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:70' id='label:70'>
+          <code>REXML::Element#delete_attribute(<var>name</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#delete_attribute" -->
+<dd>
+<p>
+          <var>name</var>で指定された属性名を持つ属性を削除する。</p>
+<p>例は<a href='#label:81'>REXML::Element#has_attributes?</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:71' id='label:71'>
+          <code>REXML::Element#delete_element(<var>element</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#delete_element" -->
+<dd>
+<p>与えれた引数で<a href='#label:216'>REXML::Elements#delete</a>メソッドを呼び出す。</p>
+<p>例は<a href='#label:60'>REXML::Element#add_element</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:72' id='label:72'>
+          <code>REXML::Element#delete_namespace(<var>prefix</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#delete_namespace" -->
+<dt>
+        <a name='label:73' id='label:73'>
+          <code>REXML::Element#delete_namespace</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#delete_namespace" -->
+<dd>
+<p>一番目の形式では接頭辞<var>prefix</var>のネームスペース宣言を削除する。</p>
+<p>二番目の形式ではデフォルトネームスペース宣言を削除する。</p>
+<p>戻り値は自分自身。</p>
+<p>例は<a href='#label:88'>REXML::Element#prefixes</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:74' id='label:74'>
+          <code>REXML::Element#document</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#document" -->
+<dd>
+<p>自分自身が属するXML文書のルートノードを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.elements["/root/b"].document.class
+# REXML::Document</pre>
+<dl>
+<dt>
+        <a name='label:75' id='label:75'>
+          <code>REXML::Element#each_element(<var>xpath</var>=<var>nil</var>, &amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#each_element" -->
+<dd>
+<p>与えれた引数で<a href='#label:218'>REXML::Elements#each</a>メソッドを呼び出す。</p>
+      </dd>
+</dl>
+<pre>doc.root.each_element("*[@number]") {|elem| puts elem}
+# &lt;a number='1'&gt;a&amp;apos;s text&lt;/a&gt;
+# &lt;b number='2'/&gt;
+doc.root.each_element {|elem| puts elem}
+# &lt;a number='1'&gt;a&amp;apos;s text&lt;/a&gt;
+# &lt;b number='2'/&gt;
+# &lt;c num='2'&gt;c&amp;apos;s text&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:76' id='label:76'>
+          <code>REXML::Element#each_element_with_attribute(<var>key</var>, <var>value</var>=<var>nil</var>, <var>max</var>=<var>0</var>, <var>name</var>=<var>nil</var>, &amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#each_element_with_attribute" -->
+<dd>
+<p>子孫ノードの中で<var>key</var>で指定された属性名を持つ要素を引数に
+ブロックを呼び出す。</p>
+<p>
+          <var>value</var>を指定することによって属性値でフィルタがかけられる。</p>
+<p>
+          <var>max</var>には最大で何回ブロックを呼び出
+すかを指定する。<var>max</var>に0以下の数値を指定するとブロックを呼
+び出す回数に制限はかけられない。</p>
+<p>
+          <var>name</var>にXPathを指定して検索す
+るノードセットを自分自身の子孫ノードセットからXPathにマッチする要
+素の子孫ノードセットに変えることも出来る。</p>
+      </dd>
+</dl>
+<pre>doc.root.each_element_with_attribute("number", "1") {|elem| puts elem}
+# &lt;a number='1'&gt;a's text&lt;/a&gt;
+doc.root.each_element_with_attribute("number") {|elem| puts elem}
+# &lt;a number='1'&gt;a's text&lt;/a&gt;
+# &lt;b number='2'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:77' id='label:77'>
+          <code>REXML::Element#each_element_with_text(<var>text</var>=<var>nil</var>, <var>max</var>=<var>0</var>, <var>name</var>=<var>nil</var>, &amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#each_element_with_text" -->
+<dd>
+<p>
+          <a href='#label:76'>REXML::Element#each_element_with_attribute</a>メソッドと同
+じく条件にあった要素を引数にブロックを呼び出す。</p>
+<p>
+          <var>text</var>にはブロックを呼び出したい要素の最初の子テキストノー
+ドの値を指定する。もし、<var>text</var>にnilを設定すると子テキス
+トノードが存在すればブロックが呼び出される。</p>
+      </dd>
+</dl>
+<pre>doc.root.each_element_with_text("a's text") {|elem| puts elem}
+# &lt;a number='1'&gt;a&amp;apos;s text&lt;/a&gt;
+doc.root.each_element_with_text() {|elem| puts elem}
+# &lt;a number='1'&gt;a&amp;apos;s text&lt;/a&gt;
+# &lt;c num='2'&gt;c&amp;apos;s text&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:78' id='label:78'>
+          <code>REXML::Element#elements</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#elements" -->
+<dd>
+<p>子要素を管理している<a href='#label:209'>REXML::Elementsクラス</a>のオブジェクトを返す。</p>
+      </dd>
+<dt>
+        <a name='label:79' id='label:79'>
+          <code>REXML::Element#get_elements(<var>xpath</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#get_elements" -->
+<dd>
+<p>与えれた引数で<a href='#label:222'>REXML::Elements#to_a</a>メソッドを呼び出す。</p>
+      </dd>
+</dl>
+<pre>p doc.root.get_elements("*[@number]").collect{|elem| elem.to_s}
+# ["&lt;a number='1'&gt;a&amp;apos;s text&lt;/a&gt;", "&lt;b number='2'/&gt;"]</pre>
+<dl>
+<dt>
+        <a name='label:80' id='label:80'>
+          <code>REXML::Element#get_text(<var>path</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#get_text" -->
+<dd>
+<p>
+          <a href='#label:92'>REXML::Element#text</a>メソッドとの違いはテキストノードの内容で
+はなくてテキストノード、つまり<a href='#label:132'>REXML::Textクラス</a>のオブ
+ジェクトを返すことだ。</p>
+      </dd>
+</dl>
+<pre>p doc.root.get_text("a").to_s
+# "a's text"
+p doc.root.get_text.to_s
+# "\n text1"
+p doc.root.get_text("b")
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:81' id='label:81'>
+          <code>REXML::Element#has_attributes?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#has_attributes?" -->
+<dd>
+<p>属性が存在すれば真を返す。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("a")
+puts e.has_attributes?
+# false
+puts e.add_attribute(REXML::Attribute.new("attr1", "val1"))
+# &lt;a attr1='val1'/&gt;
+puts e.add_attribute("attr2", "val2")
+# &lt;a attr1='val1' attr2='val2'/&gt;
+puts e.add_attribute("attr1")
+# nil
+puts e
+# &lt;a attr1='val1' attr2='val2'/&gt; ## 削除されていない
+puts e.has_attributes?
+# true
+p e.add_attributes({"attr3" =&gt; "val3", "attr4" =&gt; "attr4"})
+# {"attr3"=&gt;"val3", "attr4"=&gt;"attr4"}
+puts e.delete_attribute("attr3")
+# &lt;a attr1='val1' attr2='val2' attr4='attr4'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:82' id='label:82'>
+          <code>REXML::Element#has_elements?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#has_elements?" -->
+<dd>
+<p>子要素ノードを持っていれば真を返す。</p>
+<p>例は<a href='#label:60'>REXML::Element#add_element</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:83' id='label:83'>
+          <code>REXML::Element#has_text?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#has_text?" -->
+<dd>
+<p>子テキストノードが存在すれば真を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.has_text?
+# true
+puts doc.root.elements["b"].has_text?
+# false</pre>
+<dl>
+<dt>
+        <a name='label:84' id='label:84'>
+          <code>REXML::Element#ignore_whitespace_nodes</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#ignore_whitespace_nodes" -->
+<dd>
+<p>空白のみのテキストノードをテキストノードとみなさないので
+あれば真を返す。このメソッドは
+<a href='#label:19'>REXML::Child.once</a>メソッドで一度しか評価されないように
+なっている。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("a")
+puts e.ignore_whitespace_nodes
+# nil
+e = REXML::Element.new("a", nil, {:ignore_whitespace_nodes =&gt; %w(a)})
+puts e.ignore_whitespace_nodes
+# true</pre>
+<dl>
+<dt>
+        <a name='label:85' id='label:85'>
+          <code>REXML::Element#instructions</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#instructions" -->
+<dd>
+<p>子処理命令ノード（<a href='#label:112'>REXML::Instructionクラス</a>のオブジェク
+ト）の配列を返す。
+この配列は凍結されている。</p>
+      </dd>
+</dl>
+<pre>p doc.root.instructions.collect {|instruction| instruction.to_s }
+# ["&lt;?pi1 content?&gt;", "&lt;?pi2 content?&gt;"]
+puts doc.root.instructions.frozen?
+# true</pre>
+<dl>
+<dt>
+        <a name='label:86' id='label:86'>
+          <code>REXML::Element#namespace(<var>prefix</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#namespace" -->
+<dd>
+<p>
+          <var>prefix</var>に関連付けられているネームスペース名を返す。もし、
+<var>prefix</var>が省略された場合は要素名についている接頭辞が指定された
+ものとみなされる。<var>prefix</var>が省略されて、要素名に接頭辞が指定さ
+れていない場合はデフォルトネームスペース名が返される。明示的にデフォ
+ルトネームスペース名を取得したいときは<var>prefix</var>に空文字列を指定
+する。</p>
+<p>例は<a href='#label:88'>REXML::Element#prefixes</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:87' id='label:87'>
+          <code>REXML::Element#next_element</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#next_element" -->
+<dd>
+<p>弟要素を返す。もし、弟要素が無ければnilを返す。</p>
+      </dd>
+</dl>
+<pre>b = doc.root.elements["b"]
+puts b.next_element
+# &lt;c num='2'&gt;c&amp;apos;s text&lt;/c&gt;
+puts b.next_element.next_element
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:88' id='label:88'>
+          <code>REXML::Element#prefixes</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#prefixes" -->
+<dd>
+<p>この要素で有効な接頭辞を配列で返す。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("a")
+puts e.add_namespace("fuga", "http://fuga/")
+# &lt;a xmlns:fuga='http://fuga/'/&gt;
+puts e.add_namespace("http://hoge/")
+# &lt;a xmlns:fuga='http://fuga/' xmlns='http://hoge/'/&gt;
+p e.prefixes
+# ["fuga"]
+puts e.namespace("fuga")
+# http://fuga/
+puts e.namespace
+# http://hoge/
+puts e.delete_namespace("fuga")
+# &lt;a xmlns='http://hoge/'/&gt;
+puts e.delete_namespace
+# &lt;a/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:89' id='label:89'>
+          <code>REXML::Element#previous_element</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#previous_element" -->
+<dd>
+<p>兄要素を返す。もし、兄要素が無ければnilを返す。</p>
+      </dd>
+</dl>
+<pre>b = doc.root.elements["b"]
+puts b.previous_element
+# &lt;a number='1'&gt;a&amp;apos;s text&lt;/a&gt;
+puts b.previous_element.previous_element
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:90' id='label:90'>
+          <code>REXML::Element#raw</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#raw" -->
+<dd>
+<p>テキストノードの値を展開しないモード（rawモード）ならば真を返す。
+このメソッドは<a href='#label:19'>REXML::Child.once</a>メソッドで一度しか評価されな
+いようになっている。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("a")
+puts e.raw
+# nil
+e = REXML::Element.new("a", nil, {:raw =&gt; %w(a)})
+puts e.raw
+# true</pre>
+<dl>
+<dt>
+        <a name='label:91' id='label:91'>
+          <code>REXML::Element#root</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#root" -->
+<dd>
+<p>自分自身が属するXML文書のルート要素を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.elements["/root/a"].root.name
+# root</pre>
+<dl>
+<dt>
+        <a name='label:92' id='label:92'>
+          <code>REXML::Element#text(<var>path</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#text" -->
+<dd>
+<p>
+          <var>path</var>にマッチする要素の最初の子テキストノードの内容を返す。も
+し、<var>path</var>が省略されたら自分自身の最初の子テキストノードの内容
+を返す。もし、子テキストノードが存在しない場合はnilを返す。</p>
+      </dd>
+</dl>
+<pre>p doc.root.text("a")
+# "a's text"
+p doc.root.text
+# "\n text1"
+p doc.root.text("b")
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:93' id='label:93'>
+          <code>REXML::Element#text=(<var>text</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#text=" -->
+<dd>
+<p>最初の子テキストノードを<var>text</var>で置き換える。<var>text</var>に
+Stringオブジェクトを指定すると<a href='#label:132'>REXML::Textクラス</a>
+のオブジェクトに変換される。
+もし、子テキストノードを持たない場合は<var>text</var>を最後の子ノードと
+して追加する。<var>text</var>にnilを指定した場合は最初の子テキス
+トノードを削除する。</p>
+<p>戻り値は自分自身。</p>
+      </dd>
+</dl>
+<pre>puts doc.root.elements["a"].text = "hoge"
+# &lt;a number='1'&gt;hoge&lt;/a&gt;
+p doc.root.elements["a"].text
+# "hoge"
+puts doc.root.elements["b"].text = "fuga"
+# &lt;b number='2'&gt;fuga&lt;/b&gt;
+p doc.root.elements["b"].text
+# "fuga"
+puts doc.root.elements["c"].text = nil
+# &lt;c num='2'/&gt;
+p doc.root.elements["c"].text
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:94' id='label:94'>
+          <code>REXML::Element#texts</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#texts" -->
+<dd>
+<p>子テキストノード（<a href='#label:132'>REXML::Textクラス</a>のオブジェクト）の
+配列を返す。
+この配列は凍結されている。</p>
+      </dd>
+</dl>
+<pre>p doc.root.texts.collect {|text| text.to_s }
+# ["\n text1", "cdata1", "\n ", "\n ", "\n ",
+#  "\n text2", "\n ", "\n ", "cdata2", "\n ", "\n"]
+puts doc.root.texts.frozen?
+# true</pre>
+<dl>
+<dt>
+        <a name='label:95' id='label:95'>
+          <code>REXML::Element#whitespace</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#whitespace" -->
+<dd>
+<p>空白をそのまま扱うなら真を返す。このメソッドは
+<a href='#label:19'>REXML::Child.once</a>メソッドで一度しか評価されないように
+なっている。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("a")
+puts e.whitespace
+# true
+e = REXML::Element.new("a", nil, {:compress_whitespace =&gt; %w(a)})
+puts e.whitespace
+# false</pre>
+<dl>
+<dt>
+        <a name='label:96' id='label:96'>
+          <code>REXML::Element#write(<var>output</var>, <var>indent</var>=-<var>1</var>, <var>transitive</var>=<var>false</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Element#write" -->
+<dd>
+<p>
+          <var>output</var>に要素の内容（子孫ノードを含む）を書き出す。</p>
+<p>
+          <var>indent</var>に1以上の数値を指定するとインデント付きで書き出される。</p>
+<p>もし、<var>transitive</var>がtrueなら、テキストノードに（インデン
+トのための）余分な空白は含まれない。</p>
+      </dd>
+</dl>
+<pre>doc.root.write($stdout, 4, true)
+# &lt;root&gt;
+#  text1      &lt;![CDATA[cdata1]]&gt;
+#  &lt;a number='1'&gt;a's text&lt;/a
+#       &gt;
+#        &lt;!--comment1--&gt;
+#  &lt;b number='2'/
+#       &gt;
+#  text2      &lt;?pi1 content?&gt;
+#  &lt;c num='2'&gt;c's text&lt;/c
+#       &gt;
+#        &lt;![CDATA[cdata2]]&gt;      &lt;!--comment2--&gt;
+#        &lt;?pi2 content?&gt;
+# &lt;/root
+#   &gt;</pre>
+<h2>
+      <a name='label:97' id='label:97'>REXML::Documentクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Documentクラス" -->
+<p>
+      <a href='#label:97'>REXML::Documentクラス</a>は<a href='#label:53'>REXML::Elementクラス</a>の
+サブクラスで、XML文書のルートを表現している。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>source = "&lt;root/&gt;"
+doc = REXML::Document.new(source)</pre>
+<dl>
+<dt>
+        <a name='label:98' id='label:98'>
+          <code>REXML::Document.new(<var>source</var>=<var>nil</var>, <var>context</var>={})</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document.new" -->
+<dd>
+<p>
+          <var>source</var>にはREXML::Source、
+REXML::Document、String、IOオブジェクトのいずれ
+かを指定する。</p>
+<p>もし、<a href='#label:97'>
+            <var>REXML::Document</var>クラス</a>のオブジェクトが指定された
+ときはコピーが生成される。ただし、子ノードまではコピーされないので
+空のXML文書（ルート要素すらない）が作成される。</p>
+<p>もし、StringまたはIOオブジェクトが指定された時は
+REXML::SourceまたはREXML::IOSourceオブジェクトが生成さ
+れREXML::Sourceオブジェクトが指定されたときと同じ様に処理さ
+れる。</p>
+<p>もし、REXML::Sourceオブジェクトが指定されたときは
+<var>source</var>の内容がパースされXMLツリーを構築する。</p>
+<p>
+          <var>context</var>にはテキストノードの扱い方を指定する。</p>
+      </dd>
+</dl>
+<pre>puts REXML::Document.new(source)
+# &lt;root/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:99' id='label:99'>
+          <code>REXML::Document#&lt;&lt;(<var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#<<" -->
+<dd>
+<p>
+          <a href='#label:100'>REXML::Document#add</a>の別名。</p>
+      </dd>
+<dt>
+        <a name='label:100' id='label:100'>
+          <code>REXML::Document#add(<var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#add" -->
+<dd>
+<p>
+          <var>child</var>を最後の子ノードとして追加する。</p>
+<p>もし、<var>child</var>が<a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェクト
+なら最初の子ノードとして追加する。</p>
+<p>もし、<var>child</var>が<a href='#label:166'>REXML::DocTypeクラス</a>のオブジェクトなら
+<a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェクトの次のノードとして追
+加する（子ノードセット中に<a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェ
+クトが存在しない場合は最初の子ノードとして追加する）。</p>
+<p>ノードを追加した結果ルート要素が二つ以上になると例外が発生する。</p>
+      </dd>
+</dl>
+<pre>puts doc.add(REXML::DocType.new("root"))
+# &lt;!DOCTYPE root&gt;
+puts doc
+# &lt;!DOCTYPE root&gt;&lt;root/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:101' id='label:101'>
+          <code>REXML::Document#add_element(<var>element</var>=<var>nil</var>, <var>attrs</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#add_element" -->
+<dd>
+<p>
+          <a href='#label:60'>REXML::Element#add_element</a>メソッドと同じ。ただし、要素
+を追加した結果ルート要素が二つ以上になると例外が発生する。</p>
+      </dd>
+</dl>
+<pre>puts doc.add_element("root2")
+# 例外発生</pre>
+<dl>
+<dt>
+        <a name='label:102' id='label:102'>
+          <code>REXML::Document#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#clone" -->
+<dd>
+<p>コピーを返す。ただし、子ノードまではコピーされないので空のXML文書
+（ルート要素すらない）が作成される。</p>
+      </dd>
+</dl>
+<pre>p doc.clone.to_s
+# ""</pre>
+<dl>
+<dt>
+        <a name='label:103' id='label:103'>
+          <code>REXML::Document#doc_type</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#doc_type" -->
+<dd>
+<p>
+          <a href='#label:166'>REXML::DocTypeクラス</a>のオブジェクトを返す。もし、
+DOCTYPE宣言がされていなければnilを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.doc_type
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:104' id='label:104'>
+          <code>REXML::Document#encoding</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#encoding" -->
+<dd>
+<p>XML宣言のencodingの値を返す。もし、XML宣言がされていなければ
+REXML::Document::DECLARATION.encodingメソッドの戻り値を返す。
+この値は現在のところ"UTF-8"だ。</p>
+      </dd>
+</dl>
+<pre>puts doc.encoding
+# UTF-8</pre>
+<dl>
+<dt>
+        <a name='label:105' id='label:105'>
+          <code>REXML::Document#expanded_name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#expanded_name" -->
+<dd>
+<p>空文字列を返す。</p>
+      </dd>
+</dl>
+<pre>p doc.expanded_name
+# ""</pre>
+<dl>
+<dt>
+        <a name='label:106' id='label:106'>
+          <code>REXML::Document#name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#name" -->
+<dd>
+<p>
+          <a href='#label:105'>REXML::Document#expanded_name</a>の別名。</p>
+      </dd>
+<dt>
+        <a name='label:107' id='label:107'>
+          <code>REXML::Document#root</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#root" -->
+<dd>
+<p>ルート要素を返す。ルート要素が無ければnilを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc.root
+# &lt;root/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:108' id='label:108'>
+          <code>REXML::Document#stand_alone?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#stand_alone?" -->
+<dd>
+<p>XML宣言のstandaloneの値を返す。もし、XML宣言がされていなければ
+REXML::Document::DECLARATION.stand_alone?メソッドの戻り値を返す。
+この値は現在のところnilだ。</p>
+      </dd>
+</dl>
+<pre>puts doc.stand_alone?
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:109' id='label:109'>
+          <code>REXML::Document#version</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#version" -->
+<dd>
+<p>XML宣言のversionの値を返す。もし、XML宣言がされていなければ
+REXML::Document::DECLARATION.versionメソッドの戻り値を返す。
+この値は現在のところ"1.0"だ。</p>
+      </dd>
+</dl>
+<pre>puts doc.version
+# 1.0</pre>
+<dl>
+<dt>
+        <a name='label:110' id='label:110'>
+          <code>REXML::Document#write(<var>output</var>, <var>indent</var>=-<var>1</var>, <var>transitive</var>=<var>false</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#write" -->
+<dd>
+<p>
+          <var>output</var>にXML文書を書き出す。<var>output</var>、<var>indent</var>、
+<var>transitive</var>の値は各子ノードの<var>write</var>メソッドに渡される。</p>
+      </dd>
+</dl>
+<pre>doc.write($stdout)
+# &lt;root/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:111' id='label:111'>
+          <code>REXML::Document#xml_decl</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Document#xml_decl" -->
+<dd>
+<p>
+          <a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェクトを返す。もし、XML宣
+言がされていな
+ければ定数REXML::Document::DECLARATIONを返す。この定数には
+<a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェクトが設定されている。</p>
+      </dd>
+</dl>
+<pre>puts doc.xml_decl
+# &lt;?xml version='1.0' encoding='UTF-8'?&gt;</pre>
+<h2>
+      <a name='label:112' id='label:112'>REXML::Instructionクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Instructionクラス" -->
+<p>
+      <a href='#label:112'>REXML::Instructionクラス</a>は<a href='#label:17'>REXML::Childクラス</a>の
+サブクラスで処理命令ノードを表現している。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>pi = REXML::Instruction.new("pi", "content")</pre>
+<dl>
+<dt>
+        <a name='label:113' id='label:113'>
+          <code>REXML::Instruction.new(<var>source</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction.new" -->
+<dt>
+        <a name='label:114' id='label:114'>
+          <code>REXML::Instruction.new(<var>instruction</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction.new" -->
+<dt>
+        <a name='label:115' id='label:115'>
+          <code>REXML::Instruction.new(<var>target</var>, <var>content</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction.new" -->
+<dd>
+<p>第一引数がREXML::Sourceオブジェクトなら一番目の形式になる。
+この形式では<var>source</var>をパースして処理命令ノードを取りだす。
+<var>parent</var>には親ノードを指定する。</p>
+<p>第一引数が<a href='#label:112'>REXML::Instructionクラス</a>のオブジェクトなら二
+番目の形式になる。この形式では<var>instruction</var>のコピーを作る。
+<var>parent</var>には親ノードを指定する。</p>
+<p>第一引数がStringオブジェクトなら三番目の形式になる。この形式
+では<var>target</var>にターゲット名を、<var>content</var>に内容を
+指定する。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("parent")
+puts REXML::Instruction.new(pi, e)
+# &lt;?pi content?&gt;
+puts e
+# &lt;parent&gt;&lt;?pi content?&gt;&lt;/parent&gt;</pre>
+<dl>
+<dt>
+        <a name='label:116' id='label:116'>
+          <code>REXML::Instruction#==(<var>other</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#==" -->
+<dd>
+<p>
+          <var>other</var>が<a href='#label:112'>REXML::Instructionクラス</a>のオブジェクトで、
+ターゲット名、内容共に等しいとき真を返す。</p>
+      </dd>
+</dl>
+<pre>puts pi == pi.clone
+# true</pre>
+<dl>
+<dt>
+        <a name='label:117' id='label:117'>
+          <code>REXML::Instruction#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts pi.clone
+# &lt;?pi content?&gt;</pre>
+<dl>
+<dt>
+        <a name='label:118' id='label:118'>
+          <code>REXML::Instruction#content</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#content" -->
+<dd>
+<p>内容を返す。</p>
+      </dd>
+</dl>
+<pre>puts pi.content
+# content
+p pi.content = "new content"
+# "new content"
+p pi.content
+# "new content"</pre>
+<dl>
+<dt>
+        <a name='label:119' id='label:119'>
+          <code>REXML::Instruction#content=(<var>content</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#content=" -->
+<dd>
+<p>内容を設定する。</p>
+<p>例は<a href='#label:118'>REXML::Instruction#content</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:120' id='label:120'>
+          <code>REXML::Instruction#target</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#target" -->
+<dd>
+<p>ターゲット名を返す。</p>
+      </dd>
+</dl>
+<pre>puts pi.target
+# pi
+puts pi.target = "pi_new"
+# pi_new
+puts pi.target
+# pi_new</pre>
+<dl>
+<dt>
+        <a name='label:121' id='label:121'>
+          <code>REXML::Instruction#target=(<var>target</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#target=" -->
+<dd>
+<p>ターゲット名を設定する。</p>
+<p>例は<a href='#label:120'>REXML::Instruction#target</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:122' id='label:122'>
+          <code>REXML::Instruction#write(<var>output</var>, <var>indent</var>=-<var>1</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Instruction#write" -->
+<dd>
+<p>
+          <var>indent</var>で指定した分だけインデントをつけて<var>output</var>に処理命
+令を書き出す。</p>
+      </dd>
+</dl>
+<pre>tmp = ""
+pi.write(tmp, 3)
+p tmp
+# "   &lt;?pi content?&gt;"</pre>
+<h2>
+      <a name='label:123' id='label:123'>REXML::Commentクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Commentクラス" -->
+<p>
+      <a href='#label:123'>REXML::Commentクラス</a>は<a href='#label:17'>REXML::Childクラス</a>のサブ
+クラスでComparableモジュールをincludeしている。このクラス
+はコメントノードを表現する。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>comment = REXML::Comment.new("comment")</pre>
+<dl>
+<dt>
+        <a name='label:124' id='label:124'>
+          <code>REXML::Comment.new(<var>string</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment.new" -->
+<dt>
+        <a name='label:125' id='label:125'>
+          <code>REXML::Comment.new(<var>comment</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment.new" -->
+<dt>
+        <a name='label:126' id='label:126'>
+          <code>REXML::Comment.new(<var>source</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment.new" -->
+<dd>
+<p>第一引数がStringオブジェクトなら一番目の形式となる。この形式
+では<var>string</var>がコメントの内容となる。</p>
+<p>第一引数が<a href='#label:123'>REXML::Commentクラス</a>のオブジェクトならコピー
+を作成する。</p>
+<p>第一引数がREXML::Sourceオブジェクトなら<var>source</var>をパース
+して<a href='#label:123'>REXML::Commentクラス</a>のオブジェクトを生成する。</p>
+<p>
+          <var>parent</var>は親ノードになる。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("parent")
+REXML::Comment.new(comment, e)
+puts e
+# &lt;parent&gt;&lt;!--comment--&gt;&lt;/parent&gt;</pre>
+<dl>
+<dt>
+        <a name='label:127' id='label:127'>
+          <code>REXML::Comment#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts comment.clone
+# comment</pre>
+<dl>
+<dt>
+        <a name='label:128' id='label:128'>
+          <code>REXML::Comment#string</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment#string" -->
+<dd>
+<p>コメントの内容を返す。</p>
+      </dd>
+</dl>
+<pre>p comment.string
+# "comment"
+p comment.string = "new comment"
+# "new comment"
+p comment.to_s
+# "new comment"</pre>
+<dl>
+<dt>
+        <a name='label:129' id='label:129'>
+          <code>REXML::Comment#string=(<var>new_comment</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment#string=" -->
+<dd>
+<p>コメントの内容を<var>new_comment</var>にする。</p>
+<p>例は<a href='#label:128'>REXML::Comment#string</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:130' id='label:130'>
+          <code>REXML::Comment#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment#to_s" -->
+<dd>
+<p>REXML::Comment#stringの別名。</p>
+<p>例は<a href='#label:128'>REXML::Comment#string</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:131' id='label:131'>
+          <code>REXML::Comment#write(<var>output</var>, <var>indent</var>=-<var>1</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Comment#write" -->
+<dd>
+<p>
+          <var>indent</var>で指定した分だけインデントをつけて<var>output</var>にコメン
+トを書き出す。</p>
+      </dd>
+</dl>
+<pre>tmp = ""
+comment.write(tmp, 3)
+p tmp
+# "   &lt;!--comment--&gt;"</pre>
+<h2>
+      <a name='label:132' id='label:132'>REXML::Textクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Textクラス" -->
+<p>
+      <a href='#label:132'>REXML::Textクラス</a>は<a href='#label:17'>REXML::Childクラス</a>のサブク
+ラスでComparableモジュールをincludeしている。このクラスは
+テキストノードを表現する。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>text = REXML::Text.new("text")</pre>
+<dl>
+<dt>
+        <a name='label:133' id='label:133'>
+          <code>REXML::Text.new(<var>raw</var>, <var>dummy</var>=<var>nil</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text.new" -->
+<dt>
+        <a name='label:134' id='label:134'>
+          <code>REXML::Text.new(<var>text</var>, <var>dummy</var>=<var>nil</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text.new" -->
+<dt>
+        <a name='label:135' id='label:135'>
+          <code>REXML::Text.new(<var>string</var>, <var>respect_whitespace</var>=<var>false</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text.new" -->
+<dt>
+        <a name='label:136' id='label:136'>
+          <code>REXML::Text.new(<var>source</var>, <var>respect_whitespace</var>=<var>false</var>, <var>parent_or_raw</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text.new" -->
+<dd>
+<p>第一引数がtrueまたはfalseの場合は一番目の形式となる。
+この形式では、<var>raw</var>に参照を展開しないかどうか（参照を展開し
+ないならtrueするならfalse）を、<var>parent</var>に親ノード
+を指定する。</p>
+<p>第一引数が<a href='#label:132'>REXML::Textクラス</a>のオブジェクトなら二番目の
+形式となる。こ
+の形式は<var>text</var>のコピーを作る。<var>parent</var>には親ノードを指
+定する。</p>
+<p>第一引数がStringオブジェクトなら三番目の形式となる。この形式
+では<var>string</var>がテキストの内容となる。ただし、<var>string</var>は参照
+が展開されたものとみなされる。もし、
+<var>respect_whitespace</var>にfalseが指定されていればテキスト内
+の連続した空白文字（' '、'\t'、'\n'）は単一の空白文字に置き換わる。
+<var>parent</var>には親ノードを指定する。</p>
+<p>第一引数がSourceオブジェクトなら四番目の形式となる。この形式
+では<var>source</var>をパースしてテキストの内容を設定する。もし、
+<var>respect_whitespace</var>にfalseが指定されていればテキスト内
+の連続した空白文字（' '、'\t'、'\n'）は単一の空白文字に置き換わる。
+もし、<var>parent_or_raw</var>にtrueを指定した場合は参照を展開し
+なくなる。<a href='#label:30'>REXML::Parentクラス</a>のオブジェクトを指定した
+場合は<var>parent_or_raw</var>が親ノードになる。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("parent")
+REXML::Text.new(text, nil, e)
+puts e
+# &lt;parent&gt;text&lt;/parent&gt;
+p REXML::Text.new("   has  some \t\t  \n\n  spaces   ").to_s
+# " has some \t \n spaces "
+p REXML::Text.new("   has  some \t\t  \n\n  spaces   ", true).to_s
+# "   has  some \t\t  \n\n  spaces   "</pre>
+<dl>
+<dt>
+        <a name='label:137' id='label:137'>
+          <code>REXML::Text.normalize(<var>input</var>, <var>doctype</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text.normalize" -->
+<dd>
+<p>doctype.entitiesで得られる{実体名 =&gt; REXML::Entityオブジェ
+クト}というハッシュをもとに、<var>input</var>内の実体の内
+容を実体参照に変換した文字列を返す。<var>doctype</var>を省略した場合は
+定数REXML::DocType::DEFAULT_ENTITIESが用いられる。</p>
+      </dd>
+</dl>
+<pre>puts REXML::Text.normalize("&lt;")
+# &amp;lt;</pre>
+<dl>
+<dt>
+        <a name='label:138' id='label:138'>
+          <code>REXML::Text.unnormalize(<var>string</var>, <var>doctype</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text.unnormalize" -->
+<dd>
+<p>doctype.entity(実体名)で返される実体の内容をもとに
+<var>string</var>の数値参照、実体参照を展開した文字列を返す。
+<var>doctype</var>が省略された場合は定数
+REXML::DocType::DEFAULT_ENTITIESが用いられる。</p>
+      </dd>
+</dl>
+<pre>puts REXML::Text.unnormalize("&amp;lt;")
+# &lt;</pre>
+<dl>
+<dt>
+        <a name='label:139' id='label:139'>
+          <code>REXML::Text#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts text.clone
+# text</pre>
+<dl>
+<dt>
+        <a name='label:140' id='label:140'>
+          <code>REXML::Text#empty?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#empty?" -->
+<dd>
+<p>テキストの内容が無ければ真を返す。</p>
+      </dd>
+</dl>
+<pre>puts text.empty?
+# false</pre>
+<dl>
+<dt>
+        <a name='label:141' id='label:141'>
+          <code>REXML::Text#raw</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#raw" -->
+<dd>
+<p>内容中の参照が展開されるならfalseを返す。</p>
+      </dd>
+</dl>
+<pre>text_ref = REXML::Text.new("&amp;lt;")
+t = text_ref.clone
+# REXML::Text.newの第一引数にStringオブジェクトを指定すると参照が
+# 展開されたものと見なされるので、REXML::Text#cloneメソッドを
+# 使ってREXML::Textオブジェクトを作り直す。
+puts t.raw
+# false
+puts t.string
+# &amp;lt;
+puts t.to_s
+# &lt;
+t = text_ref.clone
+puts t.raw = true
+# true
+puts t.string
+# &amp;lt;
+puts t.to_s
+# &amp;lt;</pre>
+<dl>
+<dt>
+        <a name='label:142' id='label:142'>
+          <code>REXML::Text#raw=(<var>raw</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#raw=" -->
+<dd>
+<p>falseを指定すると、もし、内容中の参照が展開されていなければ
+展開されるようになる。</p>
+<p>例は<a href='#label:141'>REXML::Text#raw</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:143' id='label:143'>
+          <code>REXML::Text#string</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#string" -->
+<dd>
+<p>テキストの内容を返す（参照が展開されているかもしれないしされていな
+いかもしれない）。</p>
+<p>例は<a href='#label:141'>REXML::Text#raw</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:144' id='label:144'>
+          <code>REXML::Text#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#to_s" -->
+<dd>
+<p>
+          <a href='#label:141'>REXML::Text#raw</a>メソッドがfalseを返すなら参照が展
+開されたテキストの内容を返す。</p>
+<p>例は<a href='#label:141'>REXML::Text#raw</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:145' id='label:145'>
+          <code>REXML::Text#write(<var>output</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Text#write" -->
+<dd>
+<p>
+          <var>output</var>にテキストの内容を書き出す。</p>
+      </dd>
+</dl>
+<pre>text.write($stdout)
+# text</pre>
+<h2>
+      <a name='label:146' id='label:146'>REXML::CDataクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::CDataクラス" -->
+<p>
+      <a href='#label:146'>REXML::CDataクラス</a>は<a href='#label:132'>REXML::Textクラス</a>のサブク
+ラスでCDATAセクションを表す。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>cdata = REXML::CData.new("cdata")</pre>
+<dl>
+<dt>
+        <a name='label:147' id='label:147'>
+          <code>REXML::CData.new(<var>first</var>, <var>whitespace</var>=<var>nil</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::CData.new" -->
+<dd>
+<p>
+          <a href='#label:133'>REXML::Text.new</a>メソッドと同じ。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("parent")
+REXML::CData.new(cdata, nil, e)
+puts e
+# &lt;parent&gt;&lt;![CDATA[cdata]]&gt;&lt;/parent&gt;</pre>
+<dl>
+<dt>
+        <a name='label:148' id='label:148'>
+          <code>REXML::CData#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::CData#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts cdata.clone
+# cdata</pre>
+<dl>
+<dt>
+        <a name='label:149' id='label:149'>
+          <code>REXML::CData#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::CData#to_s" -->
+<dd>
+<p>CDATAセクションの内容を返す。</p>
+      </dd>
+</dl>
+<pre>puts cdata.to_s
+# cdata</pre>
+<dl>
+<dt>
+        <a name='label:150' id='label:150'>
+          <code>REXML::CData#write(<var>output</var>, <var>indent</var>=-<var>1</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::CData#write" -->
+<dd>
+<p>
+          <var>indent</var>で指定した分だけインデントをつけて<var>output</var>にCDATA
+セクションを出力する。</p>
+      </dd>
+</dl>
+<pre>tmp = ""
+cdata.write(tmp, 3)
+p tmp
+# "   &lt;![CDATA[cdata]]&gt;"</pre>
+<h2>
+      <a name='label:151' id='label:151'>REXML::XMLDeclクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::XMLDeclクラス" -->
+<p>
+      <a href='#label:151'>REXML::XMLDeclクラス</a>は<a href='#label:17'>REXML::Childクラス</a>のサブ
+クラスで、XML宣言を表現している。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>xml_decl = REXML::XMLDecl.new("1.0", "UTF-8", "no")</pre>
+<dl>
+<dt>
+        <a name='label:152' id='label:152'>
+          <code>REXML::XMLDecl.new(<var>source</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl.new" -->
+<dt>
+        <a name='label:153' id='label:153'>
+          <code>REXML::XMLDecl.new(<var>xmldecl</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl.new" -->
+<dt>
+        <a name='label:154' id='label:154'>
+          <code>REXML::XMLDecl.new(<var>version</var>=<var>DEFAULT_VERSION</var>, <var>encoding</var>=<var>nil</var>, <var>standalone</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl.new" -->
+<dd>
+<p>第一引数にREXML::Sourceオブジェクトが指定したときは一番目
+の形式になる。この形式では<var>source</var>をパースしてバージョン、エ
+ンコーディング、スタンドアロンの値を取得する。
+<var>parent</var>には親ノードを指定する。</p>
+<p>第一引数に<a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェクトを指定した
+ときは二番目の
+形式になる。この形式では<var>xmldecl</var>のコピーを生成する。ただし、
+親ノードまではコピーされない。</p>
+<p>それ以外の場合は三番目の形式になる。この形式ではバージョンを
+<var>version</var>に、エンコーディングを<var>encoding</var>に、スタンドアロン
+を<var>standalone</var>に設定する。現在は
+定数REXML::XMLDecl::DEFAULT_VERSIONの値は"1.0"となって
+いる。</p>
+      </dd>
+</dl>
+<pre>puts REXML::XMLDecl.new(xml_decl)
+# &lt;?xml version='1.0' encoding='UTF-8' standalone='no'?&gt;</pre>
+<dl>
+<dt>
+        <a name='label:155' id='label:155'>
+          <code>REXML::XMLDecl#==(<var>other</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#==" -->
+<dd>
+<p>
+          <var>other</var>が<a href='#label:151'>REXML::XMLDeclクラス</a>のオブジェクトであり、
+バージョン、エンコーディング、スタンドアロンの全てが等しければ
+真を返す。</p>
+      </dd>
+</dl>
+<pre>puts xml_decl == xml_decl.clone
+# true</pre>
+<dl>
+<dt>
+        <a name='label:156' id='label:156'>
+          <code>REXML::XMLDecl#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts xml_decl.clone
+# &lt;?xml version='1.0' encoding='UTF-8' standalone='no'?&gt;</pre>
+<dl>
+<dt>
+        <a name='label:157' id='label:157'>
+          <code>REXML::XMLDecl#encoding</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#encoding" -->
+<dd>
+<p>エンコーディングを返す。エンコーディングはREXML内部で大文字
+に変換されるので、小文字を設定しても返ってくるのは大文字になる。</p>
+      </dd>
+</dl>
+<pre>puts xml_decl.encoding
+# UTF-8
+xml_decl.encoding = "EUC-JP"
+puts xml_decl.encoding
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:158' id='label:158'>
+          <code>REXML::XMLDecl#encoding=(<var>encoding</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#encoding=" -->
+<dd>
+<p>エンコーディングを設定する。このとき、<var>encoding</var>
+の値は大文字に変換される。ただし、
+<var>encoding</var>が大文字小文字を区別せず"iso-8859-1"、"utf-8"、
+"unile"、"utf-16"以外の値であれば設定しない。</p>
+<p>例は<a href='#label:157'>REXML::XMLDecl#encoding</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:159' id='label:159'>
+          <code>REXML::XMLDecl#stand_alone?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#stand_alone?" -->
+<dd>
+<p>
+          <a href='#label:160'>REXML::XMLDecl#standalone</a>メソッドの別名。</p>
+<p>例は<a href='#label:160'>REXML::XMLDecl#standalone</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:160' id='label:160'>
+          <code>REXML::XMLDecl#standalone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#standalone" -->
+<dd>
+<p>スタンドアロンを返す。</p>
+      </dd>
+</dl>
+<pre>puts xml_decl.standalone
+# no
+xml_decl.standalone = "yes"
+puts xml_decl.stand_alone?
+# yes</pre>
+<dl>
+<dt>
+        <a name='label:161' id='label:161'>
+          <code>REXML::XMLDecl#standalone=(<var>standalone</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#standalone=" -->
+<dd>
+<p>スタンドアロンを設定する。</p>
+<p>例は<a href='#label:160'>REXML::XMLDecl#standalone</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:162' id='label:162'>
+          <code>REXML::XMLDecl#version</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#version" -->
+<dd>
+<p>バージョンを返す。</p>
+      </dd>
+</dl>
+<pre>puts xml_decl.version
+# 1.0
+xml_decl.version = "1.1"
+puts xml_decl.version
+# 1.1</pre>
+<dl>
+<dt>
+        <a name='label:163' id='label:163'>
+          <code>REXML::XMLDecl#version=(<var>version</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#version=" -->
+<dd>
+<p>バージョンを設定する。</p>
+<p>例は<a href='#label:162'>REXML::XMLDecl#version</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:164' id='label:164'>
+          <code>REXML::XMLDecl#write(<var>output</var>, <var>indent</var>=-<var>1</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#write" -->
+<dd>
+<p>
+          <var>output</var>にXML宣言を書き込む。
+<var>indent</var>に1以上の数値を指定すると、XML宣言を書き込む前の
+<var>output</var>に<a href='#label:3'>REXML::Node#indent</a>メソッドを使ってインデ
+ントを設定する。</p>
+      </dd>
+</dl>
+<pre>tmp = ""
+xml_decl.write(tmp, 3)
+p tmp
+# "   &lt;?xml version='1.0' encoding='UTF-8' standalone='no'?&gt;"</pre>
+<dl>
+<dt>
+        <a name='label:165' id='label:165'>
+          <code>REXML::XMLDecl#xmldecl(<var>version</var>, <var>encoding</var>, <var>standalone</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::XMLDecl#xmldecl" -->
+<dd>
+<p>バージョンを<var>version</var>に、エンコーディングを<var>encoding</var>に、
+スタンドアロンを<var>standalone</var>に設定する。エンコーディングの設
+定には<a href='#label:158'>REXML::XMLDecl#encoding=</a>メソッドが用いられる。</p>
+      </dd>
+</dl>
+<pre>puts xml_decl
+# &lt;?xml version='1.0' encoding='UTF-8' standalone='yes'?&gt;
+xml_decl.xmldecl("1.1", "utf-16", nil)
+puts xml_decl
+# &lt;?xml version='1.1' encoding='UTF-16'?&gt;</pre>
+<h2>
+      <a name='label:166' id='label:166'>REXML::DocTypeクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::DocTypeクラス" -->
+<p>
+      <a href='#label:166'>REXML::DocTypeクラス</a>は<a href='#label:30'>REXML::Parentクラス</a>のサ
+ブクラスで<a href='#label:7'>REXML::XMLTokensモジュール</a>をincludeしている。こ
+のクラスはDOCTYPE宣言を表現している。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>doc_type = REXML::DocType.new("hoge", "SYSTEM 'hoge.dtd'")</pre>
+<dl>
+<dt>
+        <a name='label:167' id='label:167'>
+          <code>REXML::DocType.new(<var>name</var>, <var>external_id</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType.new" -->
+<dt>
+        <a name='label:168' id='label:168'>
+          <code>REXML::DocType.new(<var>doctype</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType.new" -->
+<dt>
+        <a name='label:169' id='label:169'>
+          <code>REXML::DocType.new(<var>source</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType.new" -->
+<dd>
+<p>第一引数がStringオブジェクトだった場合は一番目の形式になる。
+この形式では、&lt;!DOCTYPE hoge SYSTEM "hoge.dtd"&gt;というDOCTYPE宣言が
+あったら<var>name</var>には"hoge"を、<var>external_id</var>には"SYSTEM
+hoge.dtd"を指定する。そうではなくて、&lt;!DOCTYPE hoge [ ... ]&gt;という
+DOCTYPE宣言だったら、<var>name</var>には"hoge"を、<var>external_id</var>には
+nilを指定する。</p>
+<p>第一引数が<a href='#label:166'>REXML::DocTypeクラス</a>のオブジェクトだった場合
+は二番目の形式
+になる。この形式では<var>doctype</var>のコピーを生成する。ただし、親ノー
+ドはコピーされず<var>parent</var>で指定したノードになる。</p>
+<p>第一引数がREXML::Sourceオブジェクトの場合は三番目の形式にな
+る。この形式では<var>source</var>がパースされ、DOCTYPE宣言内のノード
+（ENTITY宣言等の宣言やコメントノード等）が子ノードに設定される。</p>
+      </dd>
+</dl>
+<pre>puts REXML::DocType.new("hoge")
+# &lt;!DOCTYPE hoge&gt;
+doc = REXML::Document.new
+REXML::DocType.new(doc_type, doc)
+puts doc
+# &lt;!DOCTYPE hoge SYSTEM 'hoge.dtd'&gt;</pre>
+<dl>
+<dt>
+        <a name='label:170' id='label:170'>
+          <code>REXML::DocType#add(<var>child</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#add" -->
+<dd>
+<p>
+          <var>child</var>を最後の子ノードとして追加する。</p>
+<p>例は<a href='#label:171'>REXML::DocType#attribute_of</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:171' id='label:171'>
+          <code>REXML::DocType#attribute_of(<var>element</var>, <var>attribute</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#attribute_of" -->
+<dd>
+<p>
+          <var>element</var>で指定された要素名のATTLIST宣言された属性のうち
+<var>attribute</var>で指定された属性名を持つ属性のデフォルトの属性値を
+返す。もし、デフォルト値が設定されていなければnilを返す。</p>
+      </dd>
+</dl>
+<pre>doc_type = REXML::DocType.new("hoge")
+doc_type.add(REXML::Entity.new("name", "value"))
+puts doc_type.entity("name")
+# value
+puts doc_type.entities["lt"]
+# &lt;!ENTITY lt "&lt;"&gt;</pre>
+<dl>
+<dt>
+        <a name='label:172' id='label:172'>
+          <code>REXML::DocType#attributes_of(<var>element</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#attributes_of" -->
+<dd>
+<p>
+          <var>element</var>で指定された要素名のATTLIST宣言された属性
+（<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクト）の配列を返す。</p>
+      </dd>
+</dl>
+<pre>source = REXML::SourceFactory.create_from(&lt;&lt;-DOCTYPE)
+&lt;!DOCTYPE hoge [
+&lt;!ATTLIST fuga 
+          id      ID      #REQUIRED
+          attr    CDATA   #IMPLIED&gt;
+&lt;!ATTLIST foo
+          attr    CDATA   "xyz"&gt;
+]&gt;
+DOCTYPE
+doc_type = REXML::DocType.new(source)
+p doc_type.attributes_of("fuga").collect{|attr| attr.class}
+# [REXML::Attribute, REXML::Attribute]
+p doc_type.attribute_of("foo", "attr")
+# "xyz"</pre>
+<dl>
+<dt>
+        <a name='label:173' id='label:173'>
+          <code>REXML::DocType#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc_type.clone
+# &lt;!DOCTYPE hoge SYSTEM 'hoge.dtd'&gt;</pre>
+<dl>
+<dt>
+        <a name='label:174' id='label:174'>
+          <code>REXML::DocType#entities</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#entities" -->
+<dd>
+<p>{実体名 =&gt; 実体（REXML::Entityオブジェクト）}というハッ
+シュを返す。</p>
+<p>例は<a href='#label:171'>REXML::DocType#attribute_of</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:175' id='label:175'>
+          <code>REXML::DocType#entity(<var>name</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#entity" -->
+<dd>
+<p>XMLの仕様書で定義された実体または、ENTITY宣言で定義された実体のう
+ち<var>name</var>で指定された実体名を持つ実体の内容を返す。もし、実体が
+定義されていなければnilを返す。</p>
+<p>例は<a href='#label:171'>REXML::DocType#attribute_of</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:176' id='label:176'>
+          <code>REXML::DocType#external_id</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#external_id" -->
+<dd>
+<p>通常は"PUBLIC ..."か"SYSTEM ..."かnilを返す。</p>
+      </dd>
+</dl>
+<pre>puts doc_type.external_id
+# SYSTEM 'hoge.dtd'</pre>
+<dl>
+<dt>
+        <a name='label:177' id='label:177'>
+          <code>REXML::DocType#name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#name" -->
+<dd>
+<p>DOCTYPE宣言で指定されたルート要素の名前を返す。</p>
+      </dd>
+</dl>
+<pre>puts doc_type.name
+# hoge</pre>
+<dl>
+<dt>
+        <a name='label:178' id='label:178'>
+          <code>REXML::DocType#write(<var>output</var>, <var>indent</var>=<var>0</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::DocType#write" -->
+<dd>
+<p>
+          <var>indent</var>で指定されたインデントで<var>output</var>にDOCTYPE宣言を書
+き出す。</p>
+      </dd>
+</dl>
+<pre>tmp = ""
+doc_type.write(tmp, 3)
+p tmp
+# "   &lt;!DOCTYPE hoge SYSTEM 'hoge.dtd'&gt;"</pre>
+<h2>
+      <a name='label:179' id='label:179'>REXML::Declarationクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Declarationクラス" -->
+<p>
+      <a href='#label:179'>REXML::Declarationクラス</a>ではDOCTYPE宣言内の各種宣言
+（ATTLIST宣言やENTITY宣言等）で共通する処理を定義している。しかし、現
+在のバージョンでは<a href='#label:183'>REXML::ElementDeclクラス</a>（ELEMENT宣言を
+表現しているクラス）だけのスーパークラスとなっている。<a name='footmark:1' href='#foottext:1' id='footmark:1'>
+        <sup>
+          <small>(注1)</small>
+        </sup>
+      </a>
+    </p>
+    <p>
+      <a name='foottext:1' href='#footmark:1' id='foottext:1'>
+        <sup>
+          <small>(注1)</small>
+        </sup>
+      </a>
+      <small>以前のバージョ
+ンでは<a href='#label:189'>REXML::AttlistDeclクラス</a>のスーパークラスでもあった。</small>
+    </p>
+<p>このクラスを直接使うことは無いと思うので例は省略する。</p>
+<dl>
+<dt>
+        <a name='label:180' id='label:180'>
+          <code>REXML::Declaration.new(<var>source</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Declaration.new" -->
+<dd>
+<p>
+          <var>source</var>から宣言の内容を取りだす。</p>
+      </dd>
+<dt>
+        <a name='label:181' id='label:181'>
+          <code>REXML::Declaration#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Declaration#to_s" -->
+<dd>
+<p>宣言の内容を返す。</p>
+      </dd>
+<dt>
+        <a name='label:182' id='label:182'>
+          <code>REXML::Declaretion#write(<var>output</var>, <var>indent</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Declaretion#write" -->
+<dd>
+<p>
+          <var>indent</var>で指定された数値×3個の空白付きで<var>output</var>に
+宣言の内容を書き出す。</p>
+      </dd>
+</dl>
+<h2>
+      <a name='label:183' id='label:183'>REXML::ElementDeclクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::ElementDeclクラス" -->
+<p>
+      <a href='#label:183'>REXML::ElementDeclクラス</a>は
+<a href='#label:179'>REXML::Declarationクラス</a>のサブクラスでELEMENT宣言を表現している。</p>
+<p>このクラスを直接使うことは無いと思うので例は省略する。</p>
+<dl>
+<dt>
+        <a name='label:184' id='label:184'>
+          <code>REXML::ElementDecl#pattern</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::ElementDecl#pattern" -->
+<dd>
+<p>ELEMENT宣言の構文にマッチする正規表現を返す。このメソッドは
+<a href='#label:180'>REXML::Declaration.new</a>メソッドで使われる。</p>
+      </dd>
+</dl>
+<h2>
+      <a name='label:185' id='label:185'>REXML::NotationDeclクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::NotationDeclクラス" -->
+<p>
+      <a href='#label:185'>REXML::NotationDeclクラス</a>は<a href='#label:17'>REXML::Childクラス</a>
+のサブクラスでNOTATION宣言を表現している。</p>
+<p>このクラスを直接使うことは無いと思うので例は省略する。</p>
+<dl>
+<dt>
+        <a name='label:186' id='label:186'>
+          <code>REXML::NotationDecl.new(<var>source</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::NotationDecl.new" -->
+<dd>
+<p>
+          <var>source</var>からNOTATION宣言の内容を取りだす。</p>
+      </dd>
+<dt>
+        <a name='label:187' id='label:187'>
+          <code>REXML::NotationDecl#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::NotationDecl#to_s" -->
+<dd>
+<p>NOTATION宣言を返す。</p>
+      </dd>
+<dt>
+        <a name='label:188' id='label:188'>
+          <code>REXML::NotationDecl#write(<var>output</var>, <var>indent</var>=-<var>1</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::NotationDecl#write" -->
+<dd>
+<p>
+          <var>indent</var>で指定された数値×3個の空白付きで<var>output</var>に
+NOTATION宣言を書き出す。</p>
+      </dd>
+</dl>
+<h2>
+      <a name='label:189' id='label:189'>REXML::AttlistDeclクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::AttlistDeclクラス" -->
+<p>
+      <a href='#label:189'>REXML::AttlistDeclクラス</a>は<a href='#label:17'>REXML::Childクラス</a>の
+サブクラスで、<a href='#label:7'>REXML::XMLTokensモジュール</a>とEnumerable
+モジュールをincludeしている。このクラスはATTLIST宣言を表現してい
+る。</p>
+<p>このクラスを直接使うことは無いと思うので例は省略する。</p>
+<dl>
+<dt>
+        <a name='label:190' id='label:190'>
+          <code>REXML::AttlistDecl.new(<var>source</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::AttlistDecl.new" -->
+<dd>
+<p>
+          <var>source</var>からATTLIST宣言の内容を取りだす。</p>
+      </dd>
+<dt>
+        <a name='label:191' id='label:191'>
+          <code>REXML::AttlistDecl#[<var>key</var>]</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::AttlistDecl#[]" -->
+<dd>
+<p>
+          <var>key</var>という属性名の属性値にデフォルト値が設定されていればそれ
+を返す。設定されていなければnilを返す。</p>
+      </dd>
+<dt>
+        <a name='label:192' id='label:192'>
+          <code>REXML::AttlistDecl#element</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::AttlistDecl#element" -->
+<dd>
+<p>対象となる要素名を返す。</p>
+      </dd>
+<dt>
+        <a name='label:193' id='label:193'>
+          <code>REXML::AttlistDecl#include?(<var>key</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::AttlistDecl#include?" -->
+<dd>
+<p>
+          <var>key</var>という属性名の属性値にデフォルト値が設定されていれば真を
+返す。</p>
+      </dd>
+<dt>
+        <a name='label:194' id='label:194'>
+          <code>REXML::AttlistDecl#write(<var>output</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::AttlistDecl#write" -->
+<dd>
+<p>
+          <var>output</var>にATTLIST宣言を書き出す。</p>
+      </dd>
+</dl>
+<h2>
+      <a name='label:195' id='label:195'>REXML::Entityクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Entityクラス" -->
+<p>
+      <a href='#label:195'>REXML::Entityクラス</a>は<a href='#label:17'>REXML::Childクラス</a>のサブ
+クラスで<a href='#label:7'>REXML::XMLTokensモジュール</a>をincludeしている。
+このクラスは実体を表現している。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>entity = REXML::Entity.new("hoge", "1 &amp;lt;&amp;#x3d; 3")</pre>
+<dl>
+<dt>
+        <a name='label:196' id='label:196'>
+          <code>REXML::Entity.new(<var>name</var>, <var>value</var>=<var>nil</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity.new" -->
+<dt>
+        <a name='label:197' id='label:197'>
+          <code>REXML::Entity.new(<var>source</var>, <var>dummy</var>=<var>nil</var>, <var>parent</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity.new" -->
+<dd>
+<p>第一引数がStringオブジェクトなら一番目の形式になる。
+<var>name</var>には実体名を、<var>value</var>には実体の内容を指定する。</p>
+<p>第一引数がREXML::Sourceオブジェクトなら
+<var>source</var>からENTITY宣言を取りだす。</p>
+<p>
+          <var>parent</var>には親ノードを指定する。</p>
+      </dd>
+</dl>
+<pre>puts REXML::Entity.new("fuga", "fuga fuga")
+# &lt;!ENTITY fuga "fuga fuga"&gt;</pre>
+<dl>
+<dt>
+        <a name='label:198' id='label:198'>
+          <code>REXML::Entity#external</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#external" -->
+<dd>
+<p>"SYSTEM"か"PUBLIC"かnilを返す。</p>
+      </dd>
+</dl>
+<pre>puts entity.external
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:199' id='label:199'>
+          <code>REXML::Entity#name</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#name" -->
+<dd>
+<p>実体名を返す。</p>
+      </dd>
+</dl>
+<pre>puts entity.name
+# hoge</pre>
+<dl>
+<dt>
+        <a name='label:200' id='label:200'>
+          <code>REXML::Entity#ndata</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#ndata" -->
+<dd>
+<p>記法を返す。</p>
+      </dd>
+</dl>
+<pre>puts entity.ndata
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:201' id='label:201'>
+          <code>REXML::Entity#normalized</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#normalized" -->
+<dd>
+<p>参照が展開されていない実体の内容を返す。</p>
+      </dd>
+</dl>
+<pre>p entity.normalized
+# "1 &amp;lt;&amp;#x3d; 3"</pre>
+<dl>
+<dt>
+        <a name='label:202' id='label:202'>
+          <code>REXML::Entity#pubid</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#pubid" -->
+<dd>
+<p>公開識別子を返す。</p>
+      </dd>
+</dl>
+<pre>puts entity.pubid
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:203' id='label:203'>
+          <code>REXML::Entity#ref</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#ref" -->
+<dd>
+<p>システム識別子を返す。</p>
+      </dd>
+</dl>
+<pre>puts entity.ref
+# nil</pre>
+<dl>
+<dt>
+        <a name='label:204' id='label:204'>
+          <code>REXML::Entity#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#to_s" -->
+<dd>
+<p>
+          <a href='#label:207'>REXML::Entity#write</a>メソッドで書き出す文字列を返す。</p>
+      </dd>
+</dl>
+<pre>puts entity.to_s
+# &lt;!ENTITY hoge "1 &amp;lt;&amp;#x3d; 3"&gt;</pre>
+<dl>
+<dt>
+        <a name='label:205' id='label:205'>
+          <code>REXML::Entity#unnormalized</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#unnormalized" -->
+<dd>
+<p>パラメータ実体参照、一般実体参照、数値
+参照を展開した実体の内容を返す。</p>
+      </dd>
+</dl>
+<pre>p entity.unnormalized
+# "1 &lt;= 3"</pre>
+<dl>
+<dt>
+        <a name='label:206' id='label:206'>
+          <code>REXML::Entity#value</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#value" -->
+<dd>
+<p>パラメータ実体参照を展開した実体の内容を返す（はず）。</p>
+      </dd>
+</dl>
+<pre>p entity.value
+# "1 &amp;lt;&amp;#x3d; 3"</pre>
+<dl>
+<dt>
+        <a name='label:207' id='label:207'>
+          <code>REXML::Entity#write(<var>output</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Entity#write" -->
+<dd>
+<p>
+          <var>output</var>にENTITY宣言を書き出す。</p>
+      </dd>
+</dl>
+<pre>entity.write($stdout)
+# &lt;!ENTITY hoge "1 &amp;lt;&amp;#x3d; 3"&gt;</pre>
+<h2>
+      <a name='label:208' id='label:208'>REXML::EntityConstモジュール</a>
+    </h2>
+        <!-- RDLabel: "REXML::EntityConstモジュール" -->
+<p>
+      <a href='#label:208'>REXML::EntityConstモジュール</a>にはXMLの仕様書で定められた実
+体（gt やlt）が定義されている。</p>
+<h2>
+      <a name='label:209' id='label:209'>REXML::Elementsクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Elementsクラス" -->
+<p>
+      <a href='#label:209'>REXML::Elementsクラス</a>はEnumerableモジュールを
+include していて、<a href='#label:53'>REXML::Elementクラス</a>で子要素を管理
+するために使われている。主に<a href='#label:78'>REXML::Element#elements</a>メソッ
+ドでアクセスすることになるだろう。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>source = "&lt;root&gt;&lt;a num='1'/&gt;&lt;a num='2'/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;"
+doc = REXML::Document.new(source)
+elems = doc.root.elements</pre>
+<dl>
+<dt>
+        <a name='label:210' id='label:210'>
+          <code>REXML::Elements.new(<var>parent</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements.new" -->
+<dd>
+<p>
+          <var>parent</var>を親要素に設定する。</p>
+      </dd>
+<dt>
+        <a name='label:211' id='label:211'>
+          <code>REXML::Elements#&lt;&lt;(<var>element</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#<<" -->
+<dd>
+<p>
+          <a href='#label:215'>REXML::Elements#add</a>メソッド別名。</p>
+      </dd>
+<dt>
+        <a name='label:212' id='label:212'>
+          <code>REXML::Elements#[<var>index</var>, <var>name</var>=<var>nil</var>]</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#[]" -->
+<dt>
+        <a name='label:213' id='label:213'>
+          <code>REXML::Elements#[<var>xpath</var>]</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#[]" -->
+<dd>
+<p>第一引数にIntegerオブジェクトを指定したときは一番目の形式に
+なる。この形式では、<var>name</var>という要素名を持つ<var>index</var>番目の
+要素を返す。もし、<var>name</var>が省略された場合は子要素の中の
+<var>index</var>番目の要素を返す。注意して欲しいのが何番目の要素という
+のは0ではなく1から始まるということだ。<var>index</var>に1より小さい
+数値を指定すると例外が発生する。</p>
+<p>二番目の形式では<var>xpath</var>に最初にマッチした子要素を返す。</p>
+<p>どちらの形式でも指定された要素が見つからない場合はnilを返す。</p>
+      </dd>
+</dl>
+<pre>puts elems[1, "a"]
+# &lt;a num='1'/&gt;
+puts elems["b"]
+# &lt;b/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:214' id='label:214'>
+          <code>REXML::Elements#[<var>index</var>] = <var>element</var>
+          </code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#[]=" -->
+<dd>
+<p>
+          <var>index</var>を引数に<a href='#label:212'>REXML::Elements#[]</a>メソッドを呼び出
+した結果返ってきた要素を<var>element</var>で置き換える。もし、
+<a href='#label:212'>REXML::Elements#[]</a>がnilを返したら<var>element</var>を
+最後の子要素として追加する。</p>
+      </dd>
+</dl>
+<pre>elems[1] = REXML::Element.new("d")
+puts doc.root
+# &lt;root&gt;&lt;d/&gt;&lt;a num='2'/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;
+elems[100] = REXML::Element.new("e")
+puts doc.root
+# &lt;root&gt;&lt;d/&gt;&lt;a num='2'/&gt;&lt;b/&gt;&lt;c/&gt;&lt;e/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:215' id='label:215'>
+          <code>REXML::Elements#add(<var>element</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#add" -->
+<dd>
+<p>
+          <var>element</var>を最後の子要素として追加する。もし、<var>element</var>を省
+略すると要素名の無い要素を作ってしまうので注意して欲しい。</p>
+      </dd>
+</dl>
+<pre>puts elems.add(REXML::Element.new("d"))
+# &lt;d/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a num='1'/&gt;&lt;a num='2'/&gt;&lt;b/&gt;&lt;c/&gt;&lt;d/&gt;&lt;/root&gt;
+puts elems.add
+# &lt;/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a num='1'/&gt;&lt;a num='2'/&gt;&lt;b/&gt;&lt;c/&gt;&lt;d/&gt;&lt;/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:216' id='label:216'>
+          <code>REXML::Elements#delete(<var>element</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#delete" -->
+<dd>
+<p>
+          <var>element</var>を子要素から削除する。<var>element</var>には
+<a href='#label:53'>REXML::Elementクラス</a>のオブジェクト、要素名、何番目の要
+素かのいずれかを指定できる。</p>
+      </dd>
+</dl>
+<pre>puts elems.delete(1)
+# &lt;a num='1'/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a num='2'/&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;
+puts elems.delete("b")
+# &lt;b/&gt;
+puts doc.root
+# &lt;root&gt;&lt;a num='2'/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:217' id='label:217'>
+          <code>REXML::Elements#delete_all(<var>xpath</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#delete_all" -->
+<dd>
+<p>
+          <var>xpath</var>にマッチする全ての要素を削除する。戻り値は削除された要
+素の配列。</p>
+      </dd>
+</dl>
+<pre>p elems.delete_all("a").collect {|elem| elem.to_s}
+# ["&lt;a num='1'/&gt;", "&lt;a num='2'/&gt;"]
+puts doc.root
+# &lt;root&gt;&lt;b/&gt;&lt;c/&gt;&lt;/root&gt;</pre>
+<dl>
+<dt>
+        <a name='label:218' id='label:218'>
+          <code>REXML::Elements#each(<var>xpath</var>=<var>nil</var>, &amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#each" -->
+<dd>
+<p>
+          <var>xpath</var>にマッチする要素を引数にブロックを呼び出す。<var>xpath</var>
+を省略した場合は"*"が指定されたものと見なされる。</p>
+      </dd>
+</dl>
+<pre>elems.each("a") {|elem| puts elem}
+# &lt;a num='1'/&gt;
+# &lt;a num='2'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:219' id='label:219'>
+          <code>REXML::Elements#empty?</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#empty?" -->
+<dd>
+<p>子要素がなかったら真を返す。</p>
+      </dd>
+</dl>
+<pre>puts elems.empty?
+# false
+puts elems["b"].elements.empty?
+# true</pre>
+<dl>
+<dt>
+        <a name='label:220' id='label:220'>
+          <code>REXML::Elements#index(<var>element</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#index" -->
+<dd>
+<p>
+          <var>element</var>が何番目の子要素かを返す。ここでも最初の子要素は0では
+なく1から始まる。もし、<var>element</var>が子要素でなかった場合は-1を返
+す。</p>
+      </dd>
+</dl>
+<pre>puts elems.index(elems[3])
+# 3
+puts elems.index("dummy")
+# -1</pre>
+<dl>
+<dt>
+        <a name='label:221' id='label:221'>
+          <code>REXML::Elements#size</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#size" -->
+<dd>
+<p>子要素の数を返す。</p>
+      </dd>
+</dl>
+<pre>puts elems.size
+# 4</pre>
+<dl>
+<dt>
+        <a name='label:222' id='label:222'>
+          <code>REXML::Elements#to_a(<var>xpath</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Elements#to_a" -->
+<dd>
+<p>
+          <var>xpath</var>にマッチした要素の配列を返す。<var>xpath</var>
+を省略した場合は"*"が指定されたものと見なされる。</p>
+      </dd>
+</dl>
+<pre>p elems.to_a.collect {|elem| elem.to_s}
+# ["&lt;a num='1'/&gt;", "&lt;a num='2'/&gt;", "&lt;b/&gt;", "&lt;c/&gt;"]</pre>
+<h2>
+      <a name='label:223' id='label:223'>REXML::Attributeクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Attributeクラス" -->
+<p>
+      <a href='#label:223'>REXML::Attributeクラス</a>は属性ノードを表現しているクラスで、
+<a href='#label:2'>REXML::Nodeモジュール</a>、
+<a href='#label:8'>REXML::Namespaceモジュール</a>をincludeしている。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>source = "&lt;a xmlns:hoge='http://hoge/' hoge:bar='bar'/&gt;"
+doc = REXML::Document.new(source)
+attr = REXML::Attribute.new("attr", "val")</pre>
+<dl>
+<dt>
+        <a name='label:224' id='label:224'>
+          <code>REXML::Attribute.new(<var>attribute</var>, <var>element</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute.new" -->
+<dt>
+        <a name='label:225' id='label:225'>
+          <code>REXML::Attribute.new(<var>name</var>, <var>value</var>=<var>nil</var>, <var>element</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute.new" -->
+<dt>
+        <a name='label:226' id='label:226'>
+          <code>REXML::Attribute.new(<var>source</var>, <var>element</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute.new" -->
+<dd>
+<p>もし、第一引数が<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトな
+ら一番目の形式
+になる。この形式では<var>attribute</var>のコピーを作る。REXMLのバグで
+<var>element</var>は無視される。</p>
+<p>第一引数がStringオブジェクトなら二番目の形式になる。
+<var>name</var>には属性名を、<var>value</var>には参照が展開された属性値を指
+定する。</p>
+<p>第一引数がREXML::Sourceオブジェクトなら三番目の形式になる。
+この形式では<var>source</var>をパースして
+<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトを生成する。</p>
+<p>第一引数がそれ以外のオブジェクトの場合は例外が発生する。</p>
+<p>
+          <var>element</var>には属する<a href='#label:53'>REXML::Elementクラス</a>のオブジェ
+クトを指定する。
+しかし、属性-&gt;要素という一方的な親子関係しか設定しないので、要素か
+らは属性が追加されたようには見えない。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("parent")
+a = REXML::Attribute.new(attr, e)
+puts e
+# &lt;parent/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:227' id='label:227'>
+          <code>REXML::Attribute#==(<var>attribute</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#==" -->
+<dd>
+<p>
+          <var>attribute</var>が<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクト
+で、属性名、属性
+値共に等しければ真を返す。</p>
+      </dd>
+</dl>
+<pre>puts REXML::Attribute.new("a", "b") == REXML::Attribute.new("a", "b")
+# true</pre>
+<dl>
+<dt>
+        <a name='label:228' id='label:228'>
+          <code>REXML::Attribute#clone</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#clone" -->
+<dd>
+<p>コピーを返す。</p>
+      </dd>
+</dl>
+<pre>puts attr.clone
+# val</pre>
+<dl>
+<dt>
+        <a name='label:229' id='label:229'>
+          <code>REXML::Attribute#hash</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#hash" -->
+<dd>
+<p>属性名と属性値のハッシュ値を足したものを返す。</p>
+      </dd>
+<dt>
+        <a name='label:230' id='label:230'>
+          <code>REXML::Attribute#namespace(<var>prefix</var>=<var>nil</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#namespace" -->
+<dd>
+<p>
+          <var>prefix</var>に関連付けられているネームスペース名を返す。もし、自分
+自身がどの<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトにも属して
+いなかったら
+例外が発生する。<var>prefix</var>を省略した場合は
+<a href='#label:232'>REXML::Attribute#prefix</a>メソッドの戻り値が指定されたも
+のと見なされる。</p>
+      </dd>
+</dl>
+<pre>a = REXML::Attribute.new("hoge:fuga", "fuga", doc.root)
+puts a.namespace
+# http://hoge/</pre>
+<dl>
+<dt>
+        <a name='label:231' id='label:231'>
+          <code>REXML::Attribute#normalized=(<var>normalized</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#normalized=" -->
+<dd>
+<p>
+          <var>normalized</var>には、属性値内の参照が展開されたことにしたければ
+falseを、展開されていないことにしたければtrueを指定す
+る。</p>
+      </dd>
+</dl>
+<pre>a = REXML::Attribute.new("name", "1 &amp;lt;&amp;#x3d; 3")
+puts a.value
+# 1 &amp;lt;&amp;#x3d; 3
+a.normalized = true
+puts a.value
+# 1 &lt;= 3</pre>
+<dl>
+<dt>
+        <a name='label:232' id='label:232'>
+          <code>REXML::Attribute#prefix</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#prefix" -->
+<dd>
+<p>接頭辞を返す。もし、接頭辞が設定されておらず、自分自身が属する
+<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトに接頭辞が設定されて
+いればそれを返す。接頭辞が設定されておらず、属する
+<a href='#label:53'>REXML::Elementクラス</a>のオブジェク
+トもなければ空文字を返す。</p>
+      </dd>
+</dl>
+<pre>a = REXML::Attribute.new("hoge:fuga", "fuga", doc.root)
+puts a.prefix
+# hoge</pre>
+<dl>
+<dt>
+        <a name='label:233' id='label:233'>
+          <code>REXML::Attribute#remove</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#remove" -->
+<dd>
+<p>自分自身が属する<a href='#label:53'>REXML::Elementクラス</a>のオブジェクトから
+自分自身を削除する。もし、どの<a href='#label:53'>REXML::Elementクラス</a>のオ
+ブジェクトにも属していないなら何もしない。</p>
+      </dd>
+</dl>
+<pre>e = REXML::Element.new("elem")
+a = REXML::Attribute.new("name", "value")
+e.add_attribute(a)
+puts e
+# &lt;elem name='value'/&gt;
+a.remove
+puts e
+# &lt;elem/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:234' id='label:234'>
+          <code>REXML::Attribute#to_s</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#to_s" -->
+<dd>
+<p>参照が展開されていない属性値を返す。</p>
+<p>例は<a href='#label:235'>REXML::Attribute#to_string</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:235' id='label:235'>
+          <code>REXML::Attribute#to_string</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#to_string" -->
+<dd>
+<p>"属性名='参照が展開されていない属性値'"という文字列を返す。</p>
+      </dd>
+</dl>
+<pre>a = REXML::Attribute.new("name", "1 &amp;lt;&amp;#x3d; 3")
+# REXML::Attribute.newで属性値を指定すると、参照が展開された
+# 属性値とみなされるので、REXML::Attribute#cloneで
+# REXML::Attributeオブジェクトを作り直す。
+p a.clone.to_string
+# "name='1 &amp;lt;&amp;#x3d; 3'"
+p a.clone.to_s
+# "1 &amp;lt;&amp;#x3d; 3"
+p a.clone.value
+# "1 &lt;= 3"</pre>
+<dl>
+<dt>
+        <a name='label:236' id='label:236'>
+          <code>REXML::Attribute#value</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#value" -->
+<dd>
+<p>参照が展開された属性値を返す。</p>
+<p>例は<a href='#label:235'>REXML::Attribute#to_string</a>、
+<a href='#label:231'>REXML::Attribute#normalized=</a>メソッドを参照。</p>
+      </dd>
+<dt>
+        <a name='label:237' id='label:237'>
+          <code>REXML::Attribute#write(<var>output</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attribute#write" -->
+<dd>
+<p>
+          <var>output</var>に<a href='#label:235'>REXML::Attribute#to_string</a>メソッドの戻り
+値を書き出す。</p>
+      </dd>
+</dl>
+<h2>
+      <a name='label:238' id='label:238'>REXML::Attributesクラス</a>
+    </h2>
+        <!-- RDLabel: "REXML::Attributesクラス" -->
+<p>
+      <a href='#label:238'>REXML::Attributesクラス</a>はHashクラスのサブクラスだ。
+このクラスは<a href='#label:53'>REXML::Elementクラス</a>で属性を管理するために使わ
+れており、主に<a href='#label:64'>REXML::Element#attributes</a>メソッドでアクセス
+することになるだろう。</p>
+<p>このクラスの削除系のメソッドは動作が怪しい。</p>
+<p>ここでは、以下の記述は省略する。</p>
+<pre>source = &lt;&lt;-XML
+&lt;a xmlns:hoge='http://hoge/'
+   xmlns:fuga='http://fuga'
+   hoge:bar='hoge bar' bar='bar' attr='value'/&gt;
+XML
+doc = REXML::Document.new(source)
+attrs = doc.root.attributes</pre>
+<dl>
+<dt>
+        <a name='label:239' id='label:239'>
+          <code>REXML::Attributes.new(<var>element</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes.new" -->
+<dd>
+<p>属する要素を<var>element</var>に設定する。</p>
+      </dd>
+<dt>
+        <a name='label:240' id='label:240'>
+          <code>REXML::Attributes#&lt;&lt;(<var>attribute</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#<<" -->
+<dd>
+<p>
+          <a href='#label:243'>REXML::Attributes#add</a>メソッドの別名。</p>
+      </dd>
+<dt>
+        <a name='label:241' id='label:241'>
+          <code>REXML::Attributes#[<var>name</var>]</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#[]" -->
+<dd>
+<p>
+          <var>name</var>にマッチする属性の属性値を返す。マッチしなかったら
+nilを返す。</p>
+      </dd>
+</dl>
+<pre>puts attrs["attr"]
+# value</pre>
+<dl>
+<dt>
+        <a name='label:242' id='label:242'>
+          <code>REXML::Attributes#[<var>name</var>] = <var>value</var>
+          </code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#[]=" -->
+<dd>
+<p>属性名が<var>name</var>の属性の属性値を<var>value</var>に設定する。もし、属
+性名が<var>name</var>の属性が存在しなかったら属性を追加する。</p>
+<p>
+          <var>value</var>にnilを指定すると属性名が<var>name</var>の属性を削除す
+る。</p>
+      </dd>
+</dl>
+<pre>doc = REXML::Document.new(source)
+attrs = doc.root.attributes
+## []=
+attrs["attr"] = "new value"
+p attrs["attr"]
+# "new value"</pre>
+<dl>
+<dt>
+        <a name='label:243' id='label:243'>
+          <code>REXML::Attributes#add(<var>attribute</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#add" -->
+<dd>
+<p>
+          <var>attribute</var>には<a href='#label:223'>REXML::Attributeクラス</a>のオブジェク
+トを指定する。
+REXML::Attributes#[attribute.name] = attributeと等価。</p>
+      </dd>
+</dl>
+<pre>attrs.add(REXML::Attribute.new("fuga:bar", "fuga bar"))
+puts doc.root
+# &lt;a xmlns:fuga='http://fuga' xmlns:hoge='http://hoge/'
+#    bar='bar' fuga:bar='fuga bar' hoge:bar='hoge bar' attr='value'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:244' id='label:244'>
+          <code>REXML::Attributes#delete(<var>attribute</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#delete" -->
+<dd>
+<p>
+          <var>attribute</var>にマッチする属性を削除する。マッチしなかったら何も
+しない。<var>attribute</var>には
+<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトまたは属性名を指定する。
+<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトを指定した場合は
+"#{attribute.prefix}:#{attribute.name}"という属性名を指定し
+たとみなされる。</p>
+<p>戻り値は親要素。</p>
+      </dd>
+</dl>
+<pre>puts attrs.delete("attr")
+# &lt;a xmlns:fuga='http://fuga' xmlns:hoge='http://hoge/'
+#    bar='bar' hoge:bar='hoge bar'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:245' id='label:245'>
+          <code>REXML::Attributes#delete_all(<var>name</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#delete_all" -->
+<dd>
+<p>ネームスペース名も含めて、<var>name</var>に完全に一致する属性名を持つ属
+性を削除する。</p>
+      </dd>
+</dl>
+<pre>p attrs.delete_all("bar").collect {|attr| attr.to_string}
+# ["bar='bar'"]
+puts doc.root
+# &lt;a xmlns:fuga='http://fuga' xmlns:hoge='http://hoge/'
+#    hoge:bar='hoge bar' attr='value'/&gt;</pre>
+<dl>
+<dt>
+        <a name='label:246' id='label:246'>
+          <code>REXML::Attributes#each(&amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#each" -->
+<dd>
+<p>各属性について属性名、属性値を引数にブロックを呼び出す。</p>
+      </dd>
+</dl>
+<pre>tmp = []
+attrs.each {|name, value| tmp &lt;&lt; [name, value]}
+p tmp
+# [["xmlns:fuga", "http://fuga"], ["xmlns:hoge", "http://hoge/"],
+#  ["bar", "bar"], ["hoge:bar", "hoge bar"], ["attr", "value"]]</pre>
+<dl>
+<dt>
+        <a name='label:247' id='label:247'>
+          <code>REXML::Attributes#each_attribute(&amp;<var>block</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#each_attribute" -->
+<dd>
+<p>各属性について<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトを引数に
+ブロックを呼び出す。</p>
+      </dd>
+</dl>
+<pre>tmp = []
+attrs.each_attribute {|attr| tmp &lt;&lt; attr.to_string}
+p tmp
+# ["xmlns:fuga='http://fuga'", "xmlns:hoge='http://hoge/'",
+#  "bar='bar'", "hoge:bar='hoge bar'", "attr='value'"]</pre>
+<dl>
+<dt>
+        <a name='label:248' id='label:248'>
+          <code>REXML::Attributes#get_attribute(<var>name</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#get_attribute" -->
+<dd>
+<p>
+          <var>name</var>にマッチする属性（<a href='#label:223'>REXML::Attributeクラス</a>のオ
+ブジェクト）を
+返す。マッチしなかったらnilを返す。マッチしなくてもDTDでデフォ
+ルト値が設定されている属性ならばデフォルト値が属性値の
+<a href='#label:223'>REXML::Attributeクラス</a>のオブジェクトを返す。</p>
+      </dd>
+</dl>
+<pre>p attrs.get_attribute("bar").to_string
+# "bar='bar'"</pre>
+<dl>
+<dt>
+        <a name='label:249' id='label:249'>
+          <code>REXML::Attributes#length</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#length" -->
+<dd>
+<p>属性の数を返す。</p>
+      </dd>
+</dl>
+<pre>puts attrs.length
+# 5</pre>
+<dl>
+<dt>
+        <a name='label:250' id='label:250'>
+          <code>REXML::Attributes#prefixes</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#prefixes" -->
+<dd>
+<p>接頭辞の配列を返す。</p>
+      </dd>
+</dl>
+<pre>p attrs.prefixes
+# ["fuga", "hoge"]</pre>
+<dl>
+<dt>
+        <a name='label:251' id='label:251'>
+          <code>REXML::Attributes#size</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "REXML::Attributes#size" -->
+<dd>
+<p>
+          <a href='#label:249'>REXML::Attributes#length</a>メソッドの別名。</p>
+      </dd>
+</dl>
+<script type='text/javascript'>
+<!--
+make_method_list();
+//-->
+</script>
+</body>
+</html>

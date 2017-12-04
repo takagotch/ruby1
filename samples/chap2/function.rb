@@ -1,0 +1,5 @@
+# -*- encoding:euc-jp -*-
+print "Ê¸»úÎó\n"
+puts "str", "foo"
+exit
+print "test\n"

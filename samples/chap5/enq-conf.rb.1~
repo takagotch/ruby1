@@ -1,0 +1,8 @@
+
+PRIVATE_DIR = "/home/hori/wwwdata/book"
+QUESTION_DIR = PRIVATE_DIR + "/q"
+RESULT_DIR = PRIVATE_DIR + "/a"
+CHECK_FILE = PRIVATE_DIR + "/check"
+
+CHECK_TIME = 10 # 連続投票のチェック時間。秒単位
+WIDTH_MAX = 400 # グラフの最大幅

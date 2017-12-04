@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" 
+        content="text/html; charset=EUC-JP">
+  <title>アンケート（ラジオボタンの例）</title>
+<style type="text/css"><!--
+  body, table { font-size:10pt; }
+  body { background-color:#66f; }
+  h1 { 
+    color:#fff; font-family:sans-serif; 
+    border:solid #fc9; border-width:0 0 2px 10px;
+    padding-left:8px; 
+  }
+  .enq { border:2px solid #f96; background-color:#fff; }
+  th { 
+    text-align: right; vertical-align:top; 
+    line-height:2em;
+  }
+-->
+</style>
+</head>
+<body>
+
+<h1>アンケート（ラジオボタンの例）</h1>
+
+<form method="post" action="./radiobutton.cgi">
+<table align="center" class="enq" border="0">
+<tr><th nowrap>年齢:
+  <td><input type="radio" name="age" value="17">〜17
+      <input type="radio" name="age" value="21">18〜21
+      <input type="radio" name="age" value="25">22〜25
+      <input type="radio" name="age" value="29">26〜29
+      <input type="radio" name="age" value="30">30〜
+<tr><th nowrap>性別:
+  <td><input type="radio" name="sex" value="m">男性
+      <input type="radio" name="sex" value="f">女性
+<tr><th nowrap>モバイル機器:<td>
+  <input type="radio" name="portable" value="i">NTT DoCoMo (iモード)
+  <input type="radio" name="portable" value="j">J-PHONE (J-スカイ)<br>
+  <input type="radio" name="portable" value="e">au, TU-KA (EZweb)
+  <input type="radio" name="portable" value="o">その他
+  <input type="radio" name="portable" value="n">利用しない<br>
+  その他：<input type="text" name="other">
+<tr><td colspan="2" align="center"><input type="submit" value="送信">
+</table>
+</form>
+
+<hr>
+</body>
+</html>

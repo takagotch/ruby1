@@ -1,0 +1,12 @@
+
+require "pstore"
+
+db = PStore.new("/tmp/testdb")
+db.transaction {
+  db["obj"] = [1, 2, "str", 4]
+  db["obj"][1] = {"key" => "val"}
+}
+
+db.transaction {
+  p db["obj"]
+}

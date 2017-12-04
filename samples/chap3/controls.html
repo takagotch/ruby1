@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" 
+        content="text/html; charset=EUC-JP">
+  <title>コントロール</title>
+<style type="text/css">
+body, table, textarea { font-size:10pt; }
+h1 { 
+  font-family:sans-serif; border:solid #0cf; 
+  border-width:0 0 2px 0;
+}
+th { text-align: right; vertical-align:top; line-height: 2em; }
+</style>
+</head>
+<body>
+
+<h1>コントロール</h1>
+
+<form method="post" action="./controls.cgi">
+<table border="0">
+  <tr><th>ボタン：
+    <td><input type="submit" value="送信"> &nbsp; 
+      <input type="reset"> &nbsp;
+      <button>ボタン</button>
+  <tr><th>チェックボックス：
+    <td><input type="checkbox">チェックボックス
+  <tr><th>ラジオボタン：
+    <td><input type="radio" name="r">1
+      <input type="radio" name="r">2
+  <tr><th>メニュー：<td><select>
+      <option>メニュー１<option>メニュー２
+    </select>
+  <tr><th>テキスト入力：
+    <td><input type="text" size="60"><br>
+      <textarea rows="5">複数行</textarea>
+  <tr><th>ファイル選択：<td><input type="file">
+</table>
+
+<fieldset>
+  <legend>コントロールのグループ化</legend>
+  <input type="checkbox">チェック
+  <input type="text" size="50">
+</fieldset>
+</form>
+
+<hr>
+</body>
+</html>

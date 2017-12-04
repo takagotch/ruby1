@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" 
+        content="text/html; charset=EUC-JP">
+  <title>MENUS</title>
+<style type="text/css"><!--
+  body { background-color:#fc6; }
+  h1 { color:#fc6; background-color:#366; }
+  h2 { color:#fc6; background-color:#363; }
+-->
+</style>
+</head>
+<body>
+
+<table border="0" width="100%">
+<tr><td valign="top" align="center" width="150">
+<h1 style="padding-bottom:40px">MENUS</h1>
+<td width="30">
+
+<td>
+<form method="post" action="./menu.cgi">
+
+<h2 style="margin-top:0">複数選択の例</h2>
+<select multiple name="multi" size="6">
+  <option>choice 1<option>choice 2<option>choice 3
+  <option>choice 4<option>choice 5<option>choice 6
+</select>
+
+<h2>グループ化の例</h2>
+<select name="where">
+  <optgroup label="関東ブロック">
+    <option value="08">茨城<option value="09">栃木
+    <option value="10">群馬<option value="11">埼玉
+    <option value="12">千葉<option value="13">東京
+    <option value="14">神奈川<option value="19">山梨
+  </optgroup>
+  <optgroup label="中部ブロック">
+    <option value="15">新潟<option value="16">富山
+    <option value="17">石川<option value="18">福井
+    <option value="19">山梨<option value="20">長野
+    <option value="21">岐阜<option value="22">静岡
+    <option value="23">愛知<option value="24">三重
+  </optgroup>
+  <optgroup label="近畿ブロック">
+    <option value="18">福井<option value="25">滋賀
+    <option value="26">京都<option value="27">大阪
+    <option value="28">兵庫<option value="29">奈良
+    <option value="30">和歌山
+  </optgroup>
+</select>
+
+<hr>
+<input type="submit" value="送信">
+
+</form>
+</table>
+</body>
+</html>

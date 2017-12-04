@@ -1,0 +1,188 @@
+#!/usr/local/bin/ruby
+# -*- mode:ruby; encoding:euc-jp -*-
+
+# Copyright (c) 2002 HORIKAWA Hisashi. All rights reserved.
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, and/or sell copies of the Software, and to permit persons
+# to whom the Software is furnished to do so, provided that the above
+# copyright notice(s) and this permission notice appear in all copies of
+# the Software and that both the above copyright notice(s) and this
+# permission notice appear in supporting documentation.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+# OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+# INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# Except as contained in this notice, the name of a copyright holder
+# shall not be used in advertising or otherwise to promote the sale, use
+# or other dealings in this Software without prior written authorization
+# of the copyright holder.
+
+require "cgi"
+require "nkf"
+require "mailform-conf.rb"
+
+$SAFE = 1
+ENV['PATH'] = "/bin"
+
+def j2e(s)
+  s ? NKF.nkf('-e -J -m0', s) : nil
+end
+
+def e2j(s)
+  s ? NKF.nkf("-j -E -m0", s) : nil
+end
+
+class CGI
+  def get(name)
+    !self[name].empty? ? self[name].first.strip : ""
+  end
+end
+
+def header_out(title)
+  print <<EOF
+Content-Type: text/html; charset=EUC-JP
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <title>#{title}</title>
+<style type="text/css"><!--
+  body, table, textarea { font-size: 10pt; }
+  body { background-color: #fff; }
+  h1 {
+    color: white;
+    background-color: #399;
+    padding-left: 4px;
+    font-family: sans-serif;
+  }
+  .mailform { background-color: #9cc; }
+  a { color: #93f; }
+  dt {
+    margin-top:5px;
+    color:black;
+    font-weight:bold;
+    text-decoration:underline; }
+  dd {
+    border:1px solid #9cc; }
+  pre {
+    margin:0; }
+  -->
+</style>
+</head>
+<body>
+<h1>#{title}</h1>
+EOF
+end
+
+def get_data(cgi)
+  name = j2e(cgi.get("name"))
+  mail = j2e(cgi.get("mail"))
+  body = j2e(cgi.get("body"))
+  return [name, mail, body]
+end
+
+def print_retry()
+  header_out("コメント欄が空白です")
+  print <<EOF
+<p>コメント欄が空白になっています。よろしければ何かコメントをお願いします。
+<p><a href="mailform.html">[フィードバック]に戻る</a> &nbsp;
+  <a href="./">[トップページ]に戻る</a>
+<hr>
+</body>
+</html>
+EOF
+end
+
+def print_comment(data)
+  header_out("コメント受付")
+  print <<EOF
+<p>次の内容のコメントをメールとして送信しました。どうも有り難うございます。
+<dl>
+  <dt>お名前：
+  <dd>#{CGI.escapeHTML(data[0])}
+  <dt>メールアドレス：
+  <dd>#{CGI.escapeHTML(data[1])}
+  <dt>コメント：
+  <dd><pre>#{CGI.escapeHTML(data[2])}</pre>
+</dl>
+
+<a href="./">[トップページ]へ戻る</a>
+<hr>
+</body>
+</html>
+EOF
+end
+
+# コメントをメールメッセージに整形する
+def format_comment(data)
+  header = <<EOF
+From: #{FROM_ADDR}
+To: #{TO_ADDR}
+Subject: =?ISO-2022-JP?B?#{[e2j(SUBJECT)].pack("m").chomp}?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
+EOF
+  header += "Reply-To: #{data[1]}\n" if data[1] != ""
+  mailbody = <<EOF
+Webサイトへのコメントがありました。
+
+          日時：#{CGI.rfc1123_date(Time.now)}
+        お名前：#{data[0]}
+メールアドレス：#{data[1]}
+
+コメント：
+----
+EOF
+  data[2].split(/\r?\n/).each {|line|
+    mailbody << "#{line}\n"
+  }
+  mailbody << "----\n"
+  return [header, mailbody]
+end
+
+# メールを送信する
+def send_mail(msg)
+  pipe = IO.popen(INJECTOR, "w")
+  msg[0].split(/\r?\n/).each {|line|
+    pipe.print line, "\n"
+  }
+  pipe.print "\n"
+  msg[1].split(/\r?\n/).each {|line|
+    pipe.print e2j(line), "\n"
+  }
+  pipe.close
+end
+
+def error_out()
+  print "Content-Type:text/html\n\n"
+  print "<p>#{CGI.escapeHTML($!.inspect)}<br>\n"
+  $@.each {|x| print CGI.escapeHTML(x), "<br>\n"}
+end
+
+if __FILE__ == $0
+  begin
+    cgi = CGI.new
+    data = get_data(cgi)
+    if data[2] == ""
+      print_retry()
+    else
+      send_mail(format_comment(data))
+      print_comment(data)
+    end
+  rescue StandardError
+    error_out()
+  rescue ScriptError
+    error_out()
+  end
+end

@@ -1,0 +1,18 @@
+# -*- encoding:euc-jp -*-
+
+class Person
+  def initialize(name, addr, tel)
+    @name = name
+    @addr = addr
+    @tel = tel
+  end
+  
+  def get_name
+    return @name
+  end
+end
+
+suzuki = Person.new("ÎëÌÚÂÀÏº", "Âçºå»ÔËÌ¶è", "06-5555-5555")
+satou = Person.new("º´Æ£²Ö»Ò", "À¾µÜ»Ô", "0798-55-5555")
+puts suzuki.get_name
+puts satou.get_name

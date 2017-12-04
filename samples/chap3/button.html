@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" 
+        content="text/html; charset=EUC-JP">
+  <title>buttons</title>
+<style type="text/css">
+  body {background-color:#fc9;}
+  h1 {color:#f93;background-color:#fc6;padding:4px;
+    font-family:sans-serif;
+  }
+  .pane {background-color:#f93;padding:10px;}
+  .ctrl {background-color:#000;color:#fff;}
+</style>
+</head>
+<body>
+
+<h1>buttons</h1>
+
+<form action="./button.cgi" method="get">
+<div class="pane">
+  <textarea rows="5" cols="50">テキスト</textarea><br>
+  <input type="reset" name="reset" value="初期化"> &nbsp;
+  <button onClick="alert('押された');">
+    <span style="font-size:20pt;">GO!</span>
+  </button>
+</div>
+<p><input class="ctrl" type="submit" name="next" value="次">
+  <input class="ctrl" type="submit" name="prev" value="前">
+  <input class="ctrl" type="submit" name="new" value="新規">
+</form>
+
+<hr>
+</body>
+</html>

@@ -1,0 +1,20 @@
+--- rubysdl_main.c-0.7	Tue Oct 30 18:23:30 2001
++++ rubysdl_main.c	Fri Dec 14 02:14:58 2001
+@@ -70,7 +70,6 @@
+   flag= NUM2UINT(flags);
+   if( SDL_Init(flag) < 0 )
+     rb_raise(eSDLError,"Couldn't initialize SDL: %s",SDL_GetError());
+-  atexit(sdl_quit);
+   return Qnil;
+ }
+ 
+@@ -147,7 +146,8 @@
+ #ifdef HAVE_SMPEG
+   init_smpeg();
+ #endif
+-  
++
++  rb_set_end_proc(sdl_quit, 0);
+ }
+ 
+ 

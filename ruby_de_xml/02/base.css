@@ -1,0 +1,101 @@
+body { 
+       color: black;
+       background-color: #fcf0e0;
+       }
+
+a { text-decoration:none; }
+a:link { color:#cc00cc; }
+a:visited { color:#996600; }
+a:active { color:#ff3333; }
+a:hover {
+          color:#ff0000;
+          text-decoration:underline;
+          }
+
+h1 {
+    width: 97%;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #7777dd;
+    border: 1px none #8888f8;
+    border-top: 1px solid #8888f8;
+    border-left:  1px solid #8888f8;
+    border-right: 3px solid #666699;
+    border-bottom: 3px solid #666699;
+    padding: 5px 3px 3px 0.5em;
+}
+
+h2 {
+    width: 98%;
+    color: #ffffff;
+    font-weight: bold;
+    background-color: #cc6633;
+    border: 1px none #9999ff;
+    border-top: 1px solid #ff9999;
+    border-right: 2px solid #993333;
+    border-bottom: 2px solid #993333;
+    border-left: 1px solid #ff9999;
+    padding: 5px 3px 3px 0.5em;
+}
+
+p, dd {
+        margin-left:15mm;
+        margin-right:15mm;
+        text-indent:5mm;
+        }
+
+pre { 
+      background-color: #ffdddd;
+      border: 1px solid #000000;
+      padding: 5px;
+      padding-left: 10mm;
+      margin-left:  10mm;
+      margin-right: 10mm;
+      }
+
+dt { 
+     border-top: 1mm solid #ddddff;
+     border-left: 1mm solid #ddddff;
+     margin-top: 1mm;
+     margin-bottom: 1mm;
+     padding-left: 1mm;
+     }
+
+em { 
+     color:#FFFFFF;
+     background-color:#DD0000;
+     font-size: larger;
+     }
+
+/*
+pre {
+      color:#000000;
+      background-color:#FFDDDD;
+      padding: 1px 0px;
+      margin-left:15mm;
+      margin-right:15mm;
+      text-indent: 0px;
+      }
+dt { 
+     color:#000000;
+     background-color:#DDDDFF;
+     margin-top:5mm;
+     margin-left:15mm;
+     margin-right:15mm;
+     text-indent: 0px;
+     padding: 1px 0px;
+     }
+dd { 
+     color:#000000;
+     background-color:#DDFFDD;
+     margin-top:5mm;
+     margin-left:15mm;
+     margin-right:15mm;
+     }
+
+code { 
+       border-bottom: 2px solid #666699;
+       line-height: 140%;
+       font-style: italic;
+       }
+*/

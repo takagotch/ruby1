@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" 
+        content="text/html; charset=EUC-JP">
+  <title>ファイル選択</title>
+<style type="text/css">
+  body, table, textarea { font-size:10pt; }
+  table { border:solid 2px black; }
+  th { text-align:right; vertical-align:top; }
+</style>
+</head>
+<body>
+
+<h1>ファイル選択</h1>
+
+<form method="post" action="./filesel.cgi" 
+      enctype="multipart/form-data">
+<table border="0">
+  <tr><th>チェック：<td><input type="checkbox" name="check">
+  <tr><th>URL：<td><input type="text" size="60" name="url">
+  <tr><th>テキスト：
+    <td><textarea rows="10" cols="60" name="text"></textarea>
+  <tr><th>ローカル<br>ファイル：
+    <td><input type="file" size="40" name="local">
+  <tr><td><input type="submit" value="送信">
+</table>
+</form>
+
+<hr>
+</body>
+</html>

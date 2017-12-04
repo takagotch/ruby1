@@ -1,0 +1,17 @@
+
+class Cow
+  def speak
+    puts "moooo!"
+  end
+end
+
+class Horse
+  def speak
+    puts "neigh!"
+  end
+end
+
+cow = Cow.new
+horse = Horse.new
+cow.speak
+horse.speak

@@ -1,0 +1,500 @@
+<?xml version='1.0' encoding='SHIFT_JIS'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<title>REXML 2.4.2 のサンプル付きXPathの関数リファレンス</title>
+<link href='base.css' rel='StyleSheet' type='text/css'/>
+<script type='text/javascript' src='common.js'> </script>
+  </head>
+<body>
+<h1>
+      <a name='label:0' id='label:0'>REXML 2.4.2 のサンプル付きXPathの関数リファレンス</a>
+    </h1>
+        <!-- RDLabel: "REXML 2.4.2 のサンプル付きXPathの関数リファレンス" -->
+<h2>
+      <a name='label:1' id='label:1'>このリファレンスについて</a>
+    </h2>
+        <!-- RDLabel: "このリファレンスについて" -->
+<p>これは、書籍「<a href='http://ssl.ohmsha.co.jp/cgi-bin/menu.cgi?ISBN=4-274-06500-6'>Ruby de
+XML</a>」
+内に掲載されているXPathの関数リファレンスをベースとしています。一部、
+本書での記述と異なる部分もありますが<a name='footmark:1' href='#foottext:1' id='footmark:1'>
+        <sup>
+          <small>(注1)</small>
+        </sup>
+      </a>、本
+質的には同じものですのでご了承下さい。</p>
+    <p>
+      <a name='foottext:1' href='#footmark:1' id='foottext:1'>
+        <sup>
+          <small>(注1)</small>
+        </sup>
+      </a>
+      <small>書籍内では紙面の都合による不自
+然な折り返しを防ぐために不必要な変数が導入されていたりします。</small>
+    </p>
+<h2>
+      <a name='label:2' id='label:2'>はじめに</a>
+    </h2>
+        <!-- RDLabel: "はじめに" -->
+<p>XPathの関数は以下の四つに分類されている。</p>
+<ul>
+<li>ノードセット関数（node set function）</li>
+<li>文字列関数（string function）</li>
+<li>ブーリアン関数（boolean function）</li>
+<li>数値関数（number function）</li>
+</ul>
+<p>関数の中にはハイフン（-）を含むものもあるが、REXMLでは、ハイフン
+をアンダーバー（_）に変更した関数も用意している。例えば、
+a-b() という関数があったら、a-b()でも呼び出せるし、
+a_b()でも呼び出せる。</p>
+<p>ちなみに、REXMLでは、XPathの関数はモジュール
+REXML::Functionsで定義されている。つまり、このモジュールに関
+数を追加するとXPathで使えるようになるということだ。追加する際の注
+意事項はrexml/functions.rbに書いてあるので、追加する前に読ん
+でおくといいだろう。</p>
+<p>この節で使うサンプルXML文書は以下のものとする。</p>
+<pre>source = &lt;&lt;-XML
+&lt;?PI context?&gt;
+&lt;a&gt;
+  &lt;!--COMMENT A--&gt;
+  &lt;fuga:b  xmlns:fuga='http://fuga.com/'&gt;
+    &lt;!-- COMMENT FUGA:B --&gt;
+    &lt;c number='1'&gt;TEXT&lt;/c&gt;
+  &lt;/fuga:b&gt;
+  &lt;d xml:lang='ja'&gt;
+    &lt;e xml:lang='en'/&gt;
+    &lt;f/&gt;
+  &lt;/d&gt;
+  &lt;b&gt;&lt;!-- COMMENT B --&gt;&lt;/b&gt;
+&lt;/a&gt;
+XML</pre>
+<h2>
+      <a name='label:3' id='label:3'>ノードセット関数</a>
+    </h2>
+        <!-- RDLabel: "ノードセット関数" -->
+<dl>
+<dt>
+        <a name='label:4' id='label:4'>
+          <code>position()</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "position" -->
+<dd>
+<p>対象となっているノードセットの中でカレントノードが<em>軸の方向
+をふまえて</em>何番目なのかを返す。最初のノードは0ではなく1から
+始まる。また、述部に数値だけを指定するとposition()=を省
+略したものと解釈される。例えば、[2]は
+[position()=2]と解釈される。</p>
+      </dd>
+</dl>
+<pre># 対象となっているノードセットの中で逆文書順で3番目のノードを選択。
+REXML::XPath.match(doc, "/a/b/preceding::node()[position()=3]")
+# &lt;f/&gt;
+
+# preceding軸の効果は()内でのみ有効になるので、
+# 述部の軸はデフォルトのchild軸が適用される。
+# 対象となっているノードセットの中で文書順で1番目のノードを選択。
+REXML::XPath.match(doc, "/a/b/(preceding::node())[1]")
+# " COMMENT B "</pre>
+<dl>
+<dt>
+        <a name='label:5' id='label:5'>
+          <code>last()</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "last" -->
+<dd>
+<p>現在対象としているノードセットのノード数を返す。</p>
+      </dd>
+</dl>
+<pre># ルートノードの子ノードセットの中の最後のノードを選択。
+REXML::XPath.match(doc, "/a/*[position()=last()]")
+# &lt;b&gt;&lt;!-- COMMENT B --&gt;&lt;/b&gt;
+
+# 子ノードセットのノード数が1の要素ノードを選択。
+REXML::XPath.match(doc, "//*[child::node()[last()=1]]")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;
+# &lt;b&gt;&lt;!-- COMMENT B --&gt;&lt;/b&gt;</pre>
+<dl>
+<dt>
+        <a name='label:6' id='label:6'>
+          <code>count(ノードセット)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "count" -->
+<dd>
+<p>引数で指定されたノードセットのノード数を返す。</p>
+      </dd>
+</dl>
+<pre># 子要素ノードが無い要素ノードを選択。
+REXML::XPath.match(doc, "//*[count(./*)=0]")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;
+# &lt;e xml:lang='en'/&gt;
+# &lt;f/&gt;
+# &lt;b&gt;&lt;!-- COMMENT B --&gt;&lt;/b&gt;</pre>
+<dl>
+<dt>
+        <a name='label:7' id='label:7'>
+          <code>id(オブジェクト)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "id" -->
+<dd>
+<p>REXMLでは実装されていない。</p>
+      </dd>
+<dt>
+        <a name='label:8' id='label:8'>
+          <code>local-name(ノードセット=.)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "local-name" -->
+<dd>
+<p>引数ノードセットの中の文書順で最初のノードのネームスペース名を除
+いた展開名を返す。ノードセットが省略された場合はカレントノード
+が指定されたものと解釈される。</p>
+      </dd>
+</dl>
+<pre># 親要素ノードのネームスペース名を除いた展開名がbのコメントノードを選択。
+REXML::XPath.match(doc, "//comment()[local-name(..)='b']")
+# " COMMENT FUGA:B "
+# " COMMENT B "</pre>
+<dl>
+<dt>
+        <a name='label:9' id='label:9'>
+          <code>namespace-uri(ノードセット=.)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "namespace-uri" -->
+<dd>
+<p>引数ノードセットの中の文書順で最初のノードのネームスペース名を
+返す。ノードセットが省略された場合はカレントノードが指定された
+ものと解釈される。</p>
+      </dd>
+</dl>
+<pre># アンダーバーでもOK。
+REXML::XPath.match(doc, "//*[namespace_uri()='http://fuga.com/']/*")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:10' id='label:10'>
+          <code>name(ノードセット=.)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "name" -->
+<dd>
+<p>引数ノードセットの中の文書順で最初のノードの展開名を返す。
+ノードセットが省略された場合はカレントノードが指定された
+ものと解釈される。</p>
+      </dd>
+</dl>
+<pre># 展開名がbの要素ノードを選択。
+REXML::XPath.match(doc, "//*[name()='b']")
+# &lt;b&gt;&lt;!-- COMMENT B --&gt;&lt;/b&gt;</pre>
+<h2>
+      <a name='label:11' id='label:11'>文字列関数</a>
+    </h2>
+        <!-- RDLabel: "文字列関数" -->
+<dl>
+<dt>
+        <a name='label:12' id='label:12'>
+          <code>string(オブジェクト=.)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "string" -->
+<dd>
+<p>オブジェクトがノードセットなら、文書順で最初のノードの文字列値
+を返す。それ以外の値は、そのまま文字列にしたものを返す。例えば、
+1なら"1"を返し、真なら"true"を返す。引数を省略したときはカレン
+トノードが指定されたものと解釈される。が、REXMLでは引数を省略
+したときは空文字を返す。</p>
+      </dd>
+</dl>
+<pre># number属性の属性値が1の要素ノードを選択。
+REXML::XPath.match(doc, "//*[string(@number)='1']")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:13' id='label:13'>
+          <code>concat(文字列,文字列, ...)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "concat" -->
+<dd>
+<p>引数を連結したものを返す。引数は二個以上指定できる。</p>
+      </dd>
+</dl>
+<pre># テキストがTEXTであるテキストノードを選択。
+REXML::XPath.match(doc, "//text()[string(.)=concat('TE', 'X', 'T')]")
+# "TEXT"</pre>
+<dl>
+<dt>
+        <a name='label:14' id='label:14'>
+          <code>starts-with(文字列<var>1</var>,文字列<var>2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "starts-with" -->
+<dd>
+<p>文字列1が文字列2で始まるときに真を返す。</p>
+      </dd>
+</dl>
+<pre># 展開名がcから始まる要素ノードを選択。
+REXML::XPath.match(doc, "//*[starts-with(name(),'c')]")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:15' id='label:15'>
+          <code>contains(文字列<var>1</var>,文字列<var>2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "contains" -->
+<dd>
+<p>文字列1の中に文字列2が含まれているときに真を返す。</p>
+      </dd>
+</dl>
+<pre># コメントの内容にBという文字が含まれているコメントノードを選択。
+REXML::XPath.match(doc, "//comment()[contains(name(.), 'B')]")
+# " COMMENT FUGA:B "
+# " COMMENT B "</pre>
+<dl>
+<dt>
+        <a name='label:16' id='label:16'>
+          <code>substring-before(文字列<var>1</var>,文字列<var>2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "substring-before" -->
+<dd>
+<p>文字列1の中で文字列2に最初にマッチした箇所の前にある部分文字
+列を返す。文字列1に文字列2が含まれないときは空文字列を返す。</p>
+      </dd>
+</dl>
+<pre># 展開名がaの要素ノードを選択。
+REXML::XPath.match(doc, "//*[name()=substring_before('abc','b')]")
+# ルート要素aを選択。</pre>
+<dl>
+<dt>
+        <a name='label:17' id='label:17'>
+          <code>substring-after(文字列<var>1</var>,文字列<var>2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "substring-after" -->
+<dd>
+<p>文字列1の中で文字列2に最初にマッチした箇所の後にある部分文字
+列を返す。文字列1に文字列2が含まれないときは空文字列を返す。</p>
+      </dd>
+</dl>
+<pre># 展開名がcの要素ノードを選択。
+REXML::XPath.match(doc, "//*[name()=substring_after('abc','b')]")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;</pre>
+<dl>
+<dt>
+        <a name='label:18' id='label:18'>
+          <code>substring(文字列,数値<var>1</var>,数値<var>2</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "substring" -->
+<dd>
+<p>文字列の数値1番目から、数値2文字分の部分文字列を返す。
+数値2が省略されたときは、数値1番目から文字列の最後までを返す。
+先頭の文字は0ではなく、1から始まる。</p>
+      </dd>
+</dl>
+<pre># 展開名の先頭の文字がcの要素ノードを選択。
+REXML::XPath.match(doc, "//*[substring(name(), 1, 1)='c']")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;
+
+# 文字列値がTEXTのテキストノードを選択。
+REXML::XPath.match(doc, "//text()[substring('abcdeTEXT', 6)=string(.)]")
+# "TEXT"</pre>
+<dl>
+<dt>
+        <a name='label:19' id='label:19'>
+          <code>string-length(文字列)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "string-length" -->
+<dd>
+<p>文字列の文字数を返す。文字列を省略すると、カレントノードの文
+字列値の文字数を返す。REXMLでは文字列を省略できない。</p>
+      </dd>
+</dl>
+<pre># 文字列値の最後の文字がAのコメントノードを選択。
+REXML::XPath.match(doc,"//comment()[substring(string(.),string_length(.)-2)='A']")
+# "COMMENT A"</pre>
+<dl>
+<dt>
+        <a name='label:20' id='label:20'>
+          <code>normalize-space(文字列)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "normalize-space" -->
+<dd>
+<p>文字列の先頭と末尾の空白文字を取り除き、連続した空白文字を1つの
+スペースに置換した文字列を返す。文字列を省略すると、カレントノー
+ドの文字列値を対象する。</p>
+      </dd>
+</dl>
+<pre># 文字列値が"COMMENT A"のコメントノードを選択。
+REXML::XPath.match(doc, "//comment()[string(.)=normalize_space('\n COMMENT    \n A \n\n ')]")
+# "COMMENT A"</pre>
+<dl>
+<dt>
+        <a name='label:21' id='label:21'>
+          <code>translate(文字列<var>1</var>,文字列<var>2</var>,文字列<var>3</var>)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "translate" -->
+<dd>
+<p>文字列1の中の文字列2のn番目の文字を文字列3のn番目の文字で置換
+する。文字列3の文字数が文字列2より少ないときは余った文字列2は
+空文字列に対応する。例えば、
+translate("abcdefg","abcd","AB")は"ABefg"を返す。</p>
+      </dd>
+</dl>
+<pre># 文字列値がTEXTの子テキストノードを持つ要素ノードを選択する。
+REXML::XPath.match(doc, "//*[./text()=translate('tzEzXzt','tz','T')]")
+# &lt;c number='1'&gt;TEXT&lt;/c&gt;</pre>
+<h2>
+      <a name='label:22' id='label:22'>ブーリアン関数</a>
+    </h2>
+        <!-- RDLabel: "ブーリアン関数" -->
+<dl>
+<dt>
+        <a name='label:23' id='label:23'>
+          <code>boolean(オブジェクト)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "boolean" -->
+<dd>
+<p>オブジェクトが数値ならゼロ、あるいはNaN（Not a Number）の時に、
+ノードセットなら一つもノードが含まれていない時に、文字列なら空
+文字列の時に、ブーリアンなら偽の時に、偽を返す（REXMLではNaNの
+時でも真を返す）。それ以外は真になる。</p>
+      </dd>
+</dl>
+<pre># self軸は常に一つしかノードを含まないので二番目のノードはない。
+REXML::XPath.match(doc, "//node()[boolean(self::node()[2])]")
+# 空ノードセットなので偽になり、どのノードも選択されない。</pre>
+<dl>
+<dt>
+        <a name='label:24' id='label:24'>
+          <code>not(ブーリアン)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "not" -->
+<dd>
+<p>ブーリアンの否定を返す。</p>
+      </dd>
+<dt>
+        <a name='label:25' id='label:25'>
+          <code>true()</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "true" -->
+<dd>
+<p>真を返す。</p>
+      </dd>
+<dt>
+        <a name='label:26' id='label:26'>
+          <code>false()</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "false" -->
+<dd>
+<p>偽を返す。</p>
+      </dd>
+</dl>
+<pre># not false and true
+REXML::XPath.match(doc, "//node()[not(false()) and true()]")
+# 全てのノードを選択。</pre>
+<dl>
+<dt>
+        <a name='label:27' id='label:27'>
+          <code>lang(文字列)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "lang" -->
+<dd>
+<p>大文字小文字を区別せず、xml:lang属性の値が文字列によっ
+て始まっていたら真を返す。カレントノードがxml:lang属性
+を持っていなかったら直近の祖先の値を用いる。もし、
+xml:lang属性が見付からなかった場合は偽を返す。
+REXMLでは正常に動作しない。</p>
+      </dd>
+</dl>
+<h2>
+      <a name='label:28' id='label:28'>数値関数</a>
+    </h2>
+        <!-- RDLabel: "数値関数" -->
+<dl>
+<dt>
+        <a name='label:29' id='label:29'>
+          <code>number(オブジェクト)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "number" -->
+<dd>
+<p>オブジェクトを数値に変換する。オブジェクトの種類によって大き
+く四つに分けらる。</p>
+<ul>
+<li>文字列の場合、0から9の文字列のみ（先頭に-がつくことは許される）で
+       あれば対応する数値に変換される。そうでない場合はNaN（REXMLで
+       は0）になる。</li>
+<li>ブーリアンの場合、真は1、偽は0に変換される。</li>
+<li>ノードセットの場合、<a href='#label:12'>string</a>(ノードセット)の結果を文字列とし
+       て変換する。</li>
+<li>数値はそのまま返す。</li>
+<li>それ以外のときはそのオブジェクトに依存する。</li>
+</ul>
+      </dd>
+<dt>
+        <a name='label:30' id='label:30'>
+          <code>sum(ノードセット)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "sum" -->
+<dd>
+<p>ノードセットの各ノードの<a href='#label:29'>number</a>()関数の結果の総和を返す。
+REXMLでは実装されていない。</p>
+      </dd>
+<dt>
+        <a name='label:31' id='label:31'>
+          <code>floor(数値)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "floor" -->
+<dd>
+<p>引数より小さい最大の整数を返す。例えば、floor(2.3)は2を
+返す。REXMLでは引数の数が違うし、動作もしない。</p>
+      </dd>
+<dt>
+        <a name='label:32' id='label:32'>
+          <code>ceiling(数値)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "ceiling" -->
+<dd>
+<p>引数より大きい最小の整数を返す。例えば、ceiling(2.3)は3
+を返す。REXMLでは引数の数が違うし、動作もしない。</p>
+      </dd>
+<dt>
+        <a name='label:33' id='label:33'>
+          <code>round(数値)</code>
+        </a>
+      </dt>
+            <!-- RDLabel: "round" -->
+<dd>
+<p>数値にもっとも近い整数を返す。もっとも近い整数が二つある場
+合は大きい方を返す。数値がNaN、正の無限大、負の無限大、正のゼ
+ロ、負のゼロの場合はそのものを返す。例えば、round(2.3)は
+2を返す。REXMLでは引数の数が違うし、動作もしない。</p>
+      </dd>
+</dl>
+
+<script type='text/javascript'>
+<!--
+make_function_list();
+//-->
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+
+require "pstore"
+
+db = PStore.new("/tmp/testdb")
+db.transaction {
+  db.commit
+  p "ここは通らない"
+}
